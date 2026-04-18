@@ -1,0 +1,45 @@
+// Primary colors - fresh purple-blue
+$primary: #5B6AF0;
+$primary-light: #EEF0FF;
+$primary-dark: #4350D9;
+
+// Semantic colors
+$success: #3DD9A4;
+$warning: #FFB84D;
+$danger: #FF6B81;
+$info: #5BC0EB;
+
+// Gray scale
+$gray-50: #FAFBFE;
+$gray-100: #F4F5FA;
+$gray-200: #EAECF5;
+$gray-300: #D4D7E5;
+$gray-400: #A0A5BD;
+$gray-500: #6E7491;
+$gray-600: #4A5068;
+$gray-700: #2D3250;
+$gray-800: #1A1D35;
+
+// Seat status colors
+$seat-free: #3DD9A4;
+$seat-occupied: #B8BDD4;
+$seat-temp-leave: #FFB84D;
+$seat-mine: #5B6AF0;
+
+// Border radius
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 22px;
+$radius-full: 9999px;
+
+// Spacing
+$spacing-xs: 8px;
+$spacing-sm: 16px;
+$spacing-md: 24px;
+$spacing-lg: 32px;
+$spacing-xl: 48px;
+
+// Shadow
+$shadow-sm: 0 2px 8px rgba(91,106,240,0.08);
+$shadow-md: 0 4px 16px rgba(91,106,240,0.12);
+$shadow-lg: 0 8px 24px rgba(91,106,240,0.16);

@@ -1,0 +1,49 @@
+@import './styles/variables.scss';
+
+page {
+  background-color: $gray-50;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 28px;
+  color: $gray-700;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  padding: 0 32px;
+}
+
+.card {
+  background-color: #fff;
+  border-radius: $radius-lg;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.btn-primary {
+  background-color: $primary;
+  color: #fff;
+  border: none;
+  border-radius: $radius-md;
+  padding: 24px 0;
+  font-size: 32px;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+
+  &:active {
+    background-color: $primary-dark;
+  }
+}
+
+.btn-secondary {
+  background-color: #fff;
+  color: $primary;
+  border: 2px solid $primary;
+  border-radius: $radius-md;
+  padding: 24px 0;
+  font-size: 32px;
+  font-weight: 500;
+  text-align: center;
+  width: 100%;
+}

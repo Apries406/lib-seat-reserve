@@ -1,0 +1,24 @@
+{
+  "name": "lib-seat-reserve",
+  "version": "1.0.0",
+  "description": "图书馆自习座位智能预约系统",
+  "private": true,
+  "scripts": {
+    "dev:miniapp": "pnpm --filter seat-miniapp dev:weapp",
+    "build:miniapp": "pnpm --filter seat-miniapp build:weapp",
+    "dev:api": "pnpm --filter seat-api start:dev",
+    "build:api": "pnpm --filter seat-api build",
+    "dev": "pnpm run-p dev:*",
+    "build": "pnpm run-s build:*",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean"
+  },
+  "keywords": ["taro", "nestjs", "iot", "library"],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.27.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
