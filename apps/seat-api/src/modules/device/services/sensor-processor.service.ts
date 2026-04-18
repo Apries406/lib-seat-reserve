@@ -1,0 +1,100 @@
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Redis } from 'ioredis';
+import { ISensorDataMessage } from '../enums/device.enum';
+import { SeatService } from '../../seat/services/seat.service';
+import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
+
+const JUDGE_CONFIG = {
+  leave: {
+    duration: 5 * 60 * 1000,
+    interval: 30 * 1000,
+    threshold: 0.8,
+  },
+  return: {
+    duration: 3 * 60 * 1000,
+    interval: 30 * 1000,
+    threshold: 0.7,
+  },
+};
+
+@Injectable()
+export class SensorProcessorService {
+  private readonly logger = new Logger(SensorProcessorService.name);
+
+  constructor(
+    private readonly seatService: SeatService,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+  ) {}
+
+  async process(deviceId: string, message: ISensorDataMessage): Promise<void> {
+    const { sensor, timestamp } = message;
+
+    const seat = await this.seatService.findByDeviceId(deviceId);
+    if (!seat) {
+      this.logger.warn(`Device ${deviceId} not associated with any seat`);
+      return;
+    }
+
+    this.logger.debug(`Sensor ${deviceId}: ${sensor.value ? '有人' : '无人'}`);
+
+    await this.recordObservation(seat.id, sensor.value);
+
+    if (sensor.value) {
+      if (seat.status === SeatStatus.MAYBE_LEAVE || seat.status === SeatStatus.TEMP_LEAVE) {
+        const shouldReturn = await this.judgeReturn(seat.id);
+        if (shouldReturn) {
+          await this.seatService.updateStatus(seat.id, SeatStatus.IN_USE, StatusTrigger.SENSOR_RETURN);
+        }
+      }
+    } else {
+      if (seat.status === SeatStatus.IN_USE) {
+        const shouldLeave = await this.judgeLeave(seat.id);
+        if (shouldLeave) {
+          await this.seatService.updateStatus(seat.id, SeatStatus.MAYBE_LEAVE, StatusTrigger.SENSOR_LEAVE);
+        }
+      }
+    }
+  }
+
+  async recordObservation(seatId: number, isOccupied: boolean): Promise<void> {
+    const key = `seat:observations:${seatId}`;
+    const timestamp = Date.now();
+
+    await this.redis.lpush(key, JSON.stringify({ timestamp, isOccupied }));
+
+    const cutoff = timestamp - 10 * 60 * 1000;
+    await this.redis.ltrim(key, 0, 200);
+    await this.redis.expire(key, 600);
+  }
+
+  async judgeLeave(seatId: number): Promise<boolean> {
+    const observations = await this.getRecentObservations(seatId, JUDGE_CONFIG.leave.duration);
+    if (observations.length === 0) return false;
+
+    const emptyCount = observations.filter((obs) => !obs.isOccupied).length;
+    const emptyRatio = emptyCount / observations.length;
+
+    return emptyRatio >= JUDGE_CONFIG.leave.threshold;
+  }
+
+  async judgeReturn(seatId: number): Promise<boolean> {
+    const observations = await this.getRecentObservations(seatId, JUDGE_CONFIG.return.duration);
+    if (observations.length === 0) return false;
+
+    const occupiedCount = observations.filter((obs) => obs.isOccupied).length;
+    const occupiedRatio = occupiedCount / observations.length;
+
+    return occupiedRatio >= JUDGE_CONFIG.return.threshold;
+  }
+
+  private async getRecentObservations(
+    seatId: number,
+    duration: number,
+  ): Promise<Array<{ timestamp: number; isOccupied: boolean }>> {
+    const key = `seat:observations:${seatId}`;
+    const cutoff = Date.now() - duration;
+    const allData = await this.redis.lrange(key, 0, -1);
+
+    return allData.map((item) => JSON.parse(item)).filter((item) => item.timestamp >= cutoff);
+  }
+}
