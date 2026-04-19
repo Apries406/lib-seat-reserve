@@ -57,7 +57,10 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.11",
+    "@tarojs/plugin-framework-react": "4.2.0",
     "@tarojs/taro-loader": "4.2.0",
     "@tarojs/webpack5-runner": "4.2.0",
     "@types/react": "^18.0.0",
@@ -74,6 +77,6 @@
     "stylelint": "^16.3.1",
     "ts-loader": "~9.5.1",
     "typescript": "^5.4.2",
-    "webpack": "5.90.3"
+    "webpack": "5.91.0"
   }
 }
