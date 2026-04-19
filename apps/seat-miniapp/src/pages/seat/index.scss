@@ -1,3 +1,264 @@
+@import '../../styles/variables.scss';
+
 .seat {
-  padding: 24px;
+  min-height: 100vh;
+  background: $gray-50;
+  padding: 32px;
+  position: relative;
+
+  &__detail-card {
+    background: #fff;
+    border-radius: $radius-lg;
+    padding: 48px;
+    margin-bottom: 32px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+
+  &__title {
+    font-size: 48px;
+    font-weight: 700;
+    color: $gray-800;
+  }
+
+  &__status {
+    padding: 12px 32px;
+    border-radius: $radius-full;
+    font-size: 28px;
+    font-weight: 600;
+
+    &--free {
+      background: $success;
+      color: #fff;
+    }
+
+    &--reserved, &--temp-leave {
+      background: $warning;
+      color: #fff;
+    }
+
+    &--in_use {
+      background: $gray-300;
+      color: #fff;
+    }
+  }
+
+  &__info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    margin-bottom: 40px;
+  }
+
+  &__info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__info-label {
+    font-size: 24px;
+    color: $gray-400;
+  }
+
+  &__info-value {
+    font-size: 30px;
+    font-weight: 500;
+    color: $gray-700;
+  }
+
+  &__attributes {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  &__attribute {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 28px;
+    border-radius: $radius-md;
+    background: $gray-100;
+
+    &--active {
+      background: $primary-light;
+      color: $primary;
+    }
+  }
+
+  &__attribute-icon {
+    font-size: 36px;
+  }
+
+  &__attribute-text {
+    font-size: 26px;
+  }
+
+  &__rules {
+    background: #fff;
+    border-radius: $radius-lg;
+    padding: 40px;
+  }
+
+  &__rules-title {
+    font-size: 30px;
+    font-weight: 600;
+    color: $gray-700;
+    margin-bottom: 24px;
+    display: block;
+  }
+
+  &__rule {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  &__rule-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: $primary-light;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: $primary;
+    flex-shrink: 0;
+  }
+
+  &__rule-text {
+    font-size: 26px;
+    color: $gray-500;
+    line-height: 1.6;
+  }
+
+  &__reserve-btn {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 32px;
+    background: linear-gradient(180deg, transparent 0%, #fff 20%);
+  }
+
+  &__reserve-text {
+    display: block;
+    width: 100%;
+    height: 104px;
+    line-height: 104px;
+    background: $primary;
+    color: #fff;
+    border-radius: $radius-md;
+    font-size: 32px;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba($primary, 0.35);
+  }
+
+  &__modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(45, 50, 80, 0.5);
+    display: flex;
+    align-items: flex-end;
+    z-index: 100;
+  }
+
+  &__modal {
+    width: 100%;
+    background: #fff;
+    border-radius: $radius-lg $radius-lg 0 0;
+    padding: 48px;
+  }
+
+  &__modal-handle {
+    width: 72px;
+    height: 8px;
+    background: $gray-300;
+    border-radius: 4px;
+    margin: 0 auto 40px;
+  }
+
+  &__modal-title {
+    font-size: 36px;
+    font-weight: 600;
+    color: $gray-800;
+    margin-bottom: 32px;
+    display: block;
+  }
+
+  &__confirm-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: $gray-100;
+    border-radius: $radius-md;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+
+  &__confirm-seat {
+    font-size: 48px;
+    font-weight: 700;
+    color: $gray-800;
+  }
+
+  &__confirm-time {
+    text-align: right;
+  }
+
+  &__confirm-label {
+    font-size: 24px;
+    color: $gray-400;
+    display: block;
+  }
+
+  &__confirm-value {
+    font-size: 32px;
+    font-weight: 600;
+    color: $warning;
+    display: block;
+  }
+
+  &__confirm-tip {
+    font-size: 26px;
+    color: $gray-500;
+    text-align: center;
+    margin-bottom: 40px;
+    display: block;
+  }
+
+  &__modal-actions {
+    display: flex;
+    gap: 24px;
+  }
+
+  &__btn-cancel, &__btn-confirm {
+    flex: 1;
+    height: 96px;
+    line-height: 96px;
+    border-radius: $radius-md;
+    font-size: 30px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  &__btn-cancel {
+    background: $gray-100;
+    color: $gray-600;
+  }
+
+  &__btn-confirm {
+    background: $primary;
+    color: #fff;
+    box-shadow: 0 8px 28px rgba($primary, 0.3);
+  }
 }
