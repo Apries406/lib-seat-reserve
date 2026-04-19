@@ -7,19 +7,19 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 @ApiTags('用户')
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post('login')
   @ApiOperation({ summary: '微信登录' })
   async login(@Body() loginDto: LoginDto) {
     const { code } = loginDto;
-    
+
     const openId = `mock_openid_${code}`;
     const nickname = '微信用户';
-    
+
     const user = await this.userService.createOrUpdate(openId, nickname);
     const token = 'mock_jwt_token_' + user.id;
-    
+
     return {
       code: 0,
       message: '登录成功',

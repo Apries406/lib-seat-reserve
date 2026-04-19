@@ -43,20 +43,20 @@ export class Seat {
 
   @Column({
     type: 'json',
-    default: { hasOutlet: false, isQuiet: false, nearWindow: false },
+    nullable: true,
   })
   attributes: {
     hasOutlet: boolean;
     isQuiet: boolean;
     nearWindow: boolean;
-  };
+  } | null;
 
   @Column({ type: 'uuid', nullable: true })
   @Index()
-  currentUserId: string;
+  currentUserId: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  reservedUntil: Date;
+  reservedUntil: Date | null;
 
   @OneToMany(() => SeatStatusLog, (log) => log.seat)
   statusLogs: SeatStatusLog[];

@@ -20,7 +20,6 @@ export class User {
   id: string;
 
   @Column({ type: 'varchar', length: 64, unique: true })
-  @Index()
   openId: string;
 
   @Column({ type: 'varchar', length: 100 })

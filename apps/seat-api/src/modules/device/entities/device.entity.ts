@@ -17,7 +17,6 @@ export class Device {
   id: string;
 
   @Column({ type: 'varchar', length: 50, unique: true })
-  @Index()
   deviceId: string;
 
   @Column()

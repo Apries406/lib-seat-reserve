@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RedisModule } from '@nestjs-modules/ioredis';
 import { databaseConfig, redisConfig, jwtConfig, mqttConfig } from './config/database.config';
+import { RedisProviderModule } from './config/redis.provider';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SeatModule } from './modules/seat/seat.module';
@@ -27,22 +27,13 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
         username: configService.get('database.username'),
         password: configService.get('database.password'),
         database: configService.get('database.database'),
+        charset: 'utf8mb4',
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.get('database.synchronize'),
         logging: configService.get('database.logging'),
       }),
     }),
-    RedisModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        config: {
-          host: configService.get('redis.host'),
-          port: configService.get('redis.port'),
-          password: configService.get('redis.password') || undefined,
-          db: configService.get('redis.db'),
-        },
-      }),
-    }),
+    RedisProviderModule,
     UserModule,
     AuthModule,
     SeatModule,
