@@ -1,0 +1,93 @@
+@import '../../styles/variables.scss';
+
+.seat-card {
+  background: #fff;
+  border-radius: $radius-md;
+  padding: 24px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+
+  &:active {
+    transform: scale(0.96);
+  }
+
+  &--selected {
+    border-color: $primary;
+    background: $primary-light;
+    box-shadow: 0 0 0 6px rgba($primary, 0.1);
+  }
+
+  &--unavailable {
+    opacity: 0.45;
+    cursor: not-allowed;
+
+    &:active {
+      transform: none;
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  &__number {
+    font-size: 30px;
+    font-weight: 700;
+    color: $gray-800;
+  }
+
+  &__check {
+    font-size: 26px;
+  }
+
+  &__mine {
+    font-size: 26px;
+  }
+
+  &__status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 16px;
+    border-radius: $radius-full;
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 12px;
+
+    &--free {
+      background: rgba($success, 0.12);
+      color: #1BA67A;
+    }
+
+    &--occupied {
+      background: $gray-100;
+      color: $gray-500;
+    }
+
+    &--reserved, &--temp-leave {
+      background: rgba($warning, 0.12);
+      color: #D4900A;
+    }
+
+    &--mine {
+      background: rgba($primary, 0.12);
+      color: $primary;
+    }
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  &__tag {
+    font-size: 20px;
+    padding: 2px 10px;
+    border-radius: 8px;
+    background: $gray-100;
+  }
+}
