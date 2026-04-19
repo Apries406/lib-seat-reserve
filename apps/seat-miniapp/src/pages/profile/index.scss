@@ -1,3 +1,195 @@
+@import '../../styles/variables.scss';
+
 .profile {
-  padding: 24px;
+  min-height: 100vh;
+  background: $gray-50;
+
+  &__header {
+    background: linear-gradient(150deg, #7B8AFF 0%, $primary 40%, $primary-dark 100%);
+    padding: 64px 48px;
+    color: #fff;
+  }
+
+  &__user-info {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin-bottom: 48px;
+  }
+
+  &__avatar {
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 56px;
+  }
+
+  &__name {
+    font-size: 40px;
+    font-weight: 600;
+    display: block;
+  }
+
+  &__id {
+    font-size: 26px;
+    opacity: 0.75;
+    margin-top: 8px;
+    display: block;
+  }
+
+  &__credit-score {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: $radius-md;
+    padding: 32px;
+  }
+
+  &__credit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  &__credit-label {
+    font-size: 28px;
+    opacity: 0.85;
+  }
+
+  &__credit-value {
+    font-size: 64px;
+    font-weight: 700;
+  }
+
+  &__credit-bar {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  &__credit-bar-fill {
+    height: 100%;
+    background: #fff;
+    border-radius: 6px;
+  }
+
+  &__credit-tip {
+    font-size: 24px;
+    opacity: 0.65;
+    margin-top: 16px;
+    display: block;
+  }
+
+  &__stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: $gray-200;
+    margin-top: -24px;
+    margin-left: 32px;
+    margin-right: 32px;
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+
+  &__stat-card {
+    background: #fff;
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  &__stat-value {
+    font-size: 48px;
+    font-weight: 700;
+    color: $gray-800;
+    display: block;
+  }
+
+  &__stat-label {
+    font-size: 24px;
+    color: $gray-400;
+    margin-top: 8px;
+    display: block;
+  }
+
+  &__quick-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: $gray-200;
+    margin: 32px;
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+
+  &__quick-action {
+    background: #fff;
+    padding: 36px 24px;
+    text-align: center;
+  }
+
+  &__quick-icon {
+    font-size: 44px;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  &__quick-label {
+    font-size: 26px;
+    color: $gray-600;
+  }
+
+  &__feature-list {
+    margin: 0 32px 32px;
+    background: #fff;
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+
+  &__feature-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px;
+    border-bottom: 1px solid $gray-200;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__feature-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  &__feature-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: $radius-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+
+    &--blue { background: $primary-light; }
+    &--green { background: rgba($success, 0.12); }
+    &--orange { background: rgba($warning, 0.12); }
+    &--red { background: rgba($danger, 0.12); }
+  }
+
+  &__feature-name {
+    font-size: 30px;
+    color: $gray-700;
+  }
+
+  &__feature-arrow {
+    color: $gray-300;
+    font-size: 36px;
+  }
 }
