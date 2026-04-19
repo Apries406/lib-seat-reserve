@@ -1,24 +1,51 @@
-import { View, Text } from '@tarojs/components';
-import { useLoad } from '@tarojs/taro';
+import { View, Text, Button } from '@tarojs/components';
+import { useLoad, switchTab } from '@tarojs/taro';
 import { useAuth } from '../../hooks/useAuth';
 import './index.scss';
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, isLoggedIn, wxLogin } = useAuth();
 
   useLoad(() => {
     console.log('Profile page loaded.');
   });
+
+  const handleLogin = async () => {
+    try {
+      await wxLogin();
+      switchTab({ url: '/pages/index/index' });
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <View className="profile">
+        <View className="profile__login-view">
+          <View className="profile__login-icon">👤</View>
+          <Text className="profile__login-tip">登录后查看您的预约信息</Text>
+          <Button className="profile__login-btn" type="primary" onClick={handleLogin}>
+            微信一键登录
+          </Button>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="profile">
       <View className="profile__header">
         <View className="profile__user-info">
           <View className="profile__avatar">
-            <Text>{user?.avatar ? '👤' : '👤'}</Text>
+            {user?.avatar ? (
+              <Text>{user.avatar}</Text>
+            ) : (
+              <Text>👤</Text>
+            )}
           </View>
           <View>
-            <Text className="profile__name">{user?.nickname || '未登录'}</Text>
+            <Text className="profile__name">{user?.nickname || '用户'}</Text>
             <Text className="profile__id">ID: {user?.id?.slice(0, 8) || '-'}</Text>
           </View>
         </View>
@@ -89,13 +116,6 @@ export default function Profile() {
           <View className="profile__feature-left">
             <View className="profile__feature-icon profile__feature-icon--orange">⚙️</View>
             <Text className="profile__feature-name">偏好设置</Text>
-          </View>
-          <Text className="profile__feature-arrow">›</Text>
-        </View>
-        <View className="profile__feature-item" onClick={logout}>
-          <View className="profile__feature-left">
-            <View className="profile__feature-icon profile__feature-icon--red">🚪</View>
-            <Text className="profile__feature-name">退出登录</Text>
           </View>
           <Text className="profile__feature-arrow">›</Text>
         </View>

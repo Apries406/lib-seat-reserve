@@ -1,0 +1,61 @@
+.login {
+  height: 100vh;
+  background: linear-gradient(180deg, #5B6AF0 0%, #8B97F4 100%);
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    padding: 120px 48px 60px;
+    text-align: center;
+  }
+
+  &__title {
+    display: block;
+    font-size: 48px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  &__subtitle {
+    display: block;
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  &__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 48px;
+  }
+
+  &__icon {
+    font-size: 160px;
+    margin: 60px 0;
+  }
+
+  &__btn {
+    width: 100%;
+    height: 96px;
+    line-height: 96px;
+    background: #fff;
+    color: #5B6AF0;
+    font-size: 32px;
+    font-weight: 600;
+    border-radius: 48px;
+    margin-top: auto;
+    
+    &::after {
+      border: none;
+    }
+  }
+
+  &__tip {
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 32px 0 80px;
+    text-align: center;
+  }
+}

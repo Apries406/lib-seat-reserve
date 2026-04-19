@@ -192,4 +192,40 @@
     color: $gray-300;
     font-size: 36px;
   }
+
+  &__login-view {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #5B6AF0 0%, #8B97F4 100%);
+    padding: 48px;
+  }
+
+  &__login-icon {
+    font-size: 160px;
+    margin-bottom: 40px;
+  }
+
+  &__login-tip {
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 60px;
+  }
+
+  &__login-btn {
+    width: 100%;
+    height: 96px;
+    line-height: 96px;
+    background: #fff;
+    color: #5B6AF0;
+    font-size: 32px;
+    font-weight: 600;
+    border-radius: 48px;
+
+    &::after {
+      border: none;
+    }
+  }
 }
