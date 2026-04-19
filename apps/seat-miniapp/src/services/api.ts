@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro';
 import { useUserStore } from '../store/userStore';
 
-const API_BASE_URL = process.env.TARO_APP_API_URL || 'http://localhost:3000';
+const API_BASE_URL = 'http://192.168.1.244:3000';
 
 interface RequestOptions {
   url: string;

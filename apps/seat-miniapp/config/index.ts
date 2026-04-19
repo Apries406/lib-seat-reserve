@@ -14,7 +14,9 @@ export default defineConfig(async (merge, { command, mode }) => {
     sourceRoot: 'src',
     outputRoot: 'dist',
     plugins: [],
-    defineConstants: {},
+    defineConstants: {
+      TARO_APP_API_URL: JSON.stringify(process.env.TARO_APP_API_URL || 'http://localhost:3000'),
+    },
     copy: {
       patterns: [],
       options: {}
@@ -36,16 +38,6 @@ export default defineConfig(async (merge, { command, mode }) => {
             limit: 1024
           }
         }
-      },
-      webpackChain(chain) {
-        chain.merge({
-          module: {
-            rule: {
-              test: /\.ts$/,
-              use: ['ts-loader']
-            }
-          }
-        })
       }
     },
     h5: {
