@@ -1,3 +1,50 @@
+@import '../../styles/variables.scss';
+
 .checkin {
-  padding: 24px;
+  min-height: 100vh;
+  background: $gray-50;
+  padding: 32px;
+
+  &__card {
+    background: #fff;
+    border-radius: $radius-lg;
+    padding: 48px 32px;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  &__seat-info {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    padding: 32px 0;
+    border-top: 1px solid $gray-200;
+    border-bottom: 1px solid $gray-200;
+    margin-top: 32px;
+  }
+
+  &__info-item {
+    text-align: center;
+  }
+
+  &__info-value {
+    font-size: 40px;
+    font-weight: 700;
+    color: $gray-800;
+    display: block;
+  }
+
+  &__info-label {
+    font-size: 24px;
+    color: $gray-400;
+    margin-top: 8px;
+    display: block;
+  }
+
+  &__title {
+    font-size: 28px;
+    color: $gray-500;
+    padding: 0 0 24px;
+    display: block;
+  }
 }

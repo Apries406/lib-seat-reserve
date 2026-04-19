@@ -1,0 +1,53 @@
+@import '../../styles/variables.scss';
+
+.countdown-timer {
+  text-align: center;
+
+  &__label {
+    font-size: 26px;
+    color: $gray-400;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  &__time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__number {
+    font-size: 96px;
+    font-weight: 700;
+    color: $warning;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__colon {
+    font-size: 96px;
+    font-weight: 700;
+    color: $warning;
+    margin: 0 8px;
+  }
+
+  &__unit {
+    font-size: 28px;
+    color: $gray-400;
+    margin-top: 8px;
+    display: block;
+  }
+
+  &--expired {
+    .countdown-timer__number,
+    .countdown-timer__colon {
+      color: $danger;
+    }
+  }
+
+  &__expired-text {
+    font-size: 28px;
+    color: $danger;
+    margin-top: 16px;
+    display: block;
+  }
+}
