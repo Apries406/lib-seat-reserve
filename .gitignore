@@ -5,6 +5,7 @@ node_modules
 dist
 build
 .output
+.swc
 
 # Taro
 apps/seat-miniapp/dist
