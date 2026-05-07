@@ -66,11 +66,45 @@ export const useSeatStore = create<SeatStore>((set, get) => ({
   },
 
   updateSeatStatus: (seatId, status) => {
-    set((state) => ({
-      seats: state.seats.map((seat) =>
-        seat.id === seatId ? { ...seat, status } : seat,
-      ),
-    }));
+    set((state) => {
+      const targetSeat = state.seats.find((seat) => seat.id === seatId);
+
+      if (!targetSeat) {
+        return state;
+      }
+
+      const availabilityDelta =
+        targetSeat.status === SeatStatus.FREE && status !== SeatStatus.FREE
+          ? -1
+          : targetSeat.status !== SeatStatus.FREE && status === SeatStatus.FREE
+            ? 1
+            : 0;
+
+      return {
+        seats: state.seats.map((seat) =>
+          seat.id === seatId ? { ...seat, status } : seat,
+        ),
+        selectedSeat:
+          state.selectedSeat?.id === seatId
+            ? { ...state.selectedSeat, status }
+            : state.selectedSeat,
+        areas:
+          availabilityDelta === 0
+            ? state.areas
+            : state.areas.map((area) => {
+                const matchesArea = area.id === targetSeat.area || area.name === targetSeat.area;
+
+                if (!matchesArea) {
+                  return area;
+                }
+
+                return {
+                  ...area,
+                  availableCount: Math.max(0, area.availableCount + availabilityDelta),
+                };
+              }),
+      };
+    });
   },
 
   resetFilter: () => {

@@ -6,6 +6,7 @@ import { Seat } from '../entities/seat.entity';
 import { SeatStatusLog } from '../entities/seat-status-log.entity';
 import { SeatStatus, StatusTrigger } from '../enums/seat-status.enum';
 import { NotFoundException } from '@nestjs/common';
+import { SeatGateway } from '../../websocket/seat.gateway';
 
 const mockSeat: Seat = {
   id: 1,
@@ -65,12 +66,17 @@ describe('SeatService', () => {
     save: jest.fn(),
   };
 
+  const mockSeatGateway = {
+    emitSeatStatusChange: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SeatService,
         { provide: getRepositoryToken(Seat), useValue: mockSeatRepo },
         { provide: getRepositoryToken(SeatStatusLog), useValue: mockLogRepo },
+        { provide: SeatGateway, useValue: mockSeatGateway },
       ],
     }).compile();
 
@@ -150,6 +156,7 @@ describe('SeatService', () => {
       expect(result.status).toBe(SeatStatus.RESERVED);
       expect(result.currentUserId).toBe('user-123');
       expect(mockLogRepo.save).toHaveBeenCalled();
+      expect(mockSeatGateway.emitSeatStatusChange).toHaveBeenCalledWith(1, SeatStatus.RESERVED);
     });
 
     it('should clear currentUserId and reservedUntil when setting FREE', async () => {
@@ -161,6 +168,7 @@ describe('SeatService', () => {
       const result = await service.updateStatus(1, SeatStatus.FREE, StatusTrigger.RELEASE);
       expect(result.currentUserId).toBeNull();
       expect(result.reservedUntil).toBeNull();
+      expect(mockSeatGateway.emitSeatStatusChange).toHaveBeenCalledWith(1, SeatStatus.FREE);
     });
   });
 
@@ -175,6 +183,7 @@ describe('SeatService', () => {
       expect(result.status).toBe(SeatStatus.RESERVED);
       expect(result.currentUserId).toBe('user-123');
       expect(result.reservedUntil).toBe(expiresAt);
+      expect(mockSeatGateway.emitSeatStatusChange).toHaveBeenCalledWith(1, SeatStatus.RESERVED);
     });
   });
 
@@ -189,6 +198,7 @@ describe('SeatService', () => {
       expect(result.status).toBe(SeatStatus.FREE);
       expect(result.currentUserId).toBeNull();
       expect(result.reservedUntil).toBeNull();
+      expect(mockSeatGateway.emitSeatStatusChange).toHaveBeenCalledWith(1, SeatStatus.FREE);
     });
   });
 

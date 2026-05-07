@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserService, ViolationType } from './user.service';
 import { User, CreditScoreLevel } from '../entities/user.entity';
+import { CreditScoreDetail } from '../entities/credit-score-detail.entity';
 import { NotFoundException } from '@nestjs/common';
 
 const mockUser: User = {
@@ -36,11 +37,18 @@ describe('UserService', () => {
     })),
   };
 
+  const mockDetailRepo = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findAndCount: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
         { provide: getRepositoryToken(User), useValue: mockRepo },
+        { provide: getRepositoryToken(CreditScoreDetail), useValue: mockDetailRepo },
       ],
     }).compile();
 
@@ -116,13 +124,34 @@ describe('UserService', () => {
   describe('deductCreditScore', () => {
     it('should deduct credit score for violation', async () => {
       const userWithScore = { ...mockUser, creditScore: 80, violationCount: 0 };
+      const detailRecord = {
+        userId: userWithScore.id,
+        changeAmount: -15,
+        reason: ViolationType.NO_SHOW,
+        beforeScore: 80,
+        afterScore: 65,
+        reservationId: 'reservation-uuid-1',
+      };
       mockRepo.findOne.mockResolvedValue(userWithScore);
       mockRepo.save.mockImplementation(async (u) => u);
+      mockDetailRepo.create.mockReturnValue(detailRecord);
+      mockDetailRepo.save.mockResolvedValue(detailRecord);
 
-      const result = await service.deductCreditScore('test-uuid-1234', ViolationType.NO_SHOW);
+      const result = await service.deductCreditScore('test-uuid-1234', ViolationType.NO_SHOW, {
+        reservationId: 'reservation-uuid-1',
+      });
       expect(result.creditScore).toBe(65); // 80 - 15
       expect(result.violationCount).toBe(1);
       expect(result.lastViolationAt).toBeDefined();
+      expect(mockDetailRepo.create).toHaveBeenCalledWith({
+        userId: 'test-uuid-1234',
+        changeAmount: -15,
+        reason: ViolationType.NO_SHOW,
+        beforeScore: 80,
+        afterScore: 65,
+        reservationId: 'reservation-uuid-1',
+      });
+      expect(mockDetailRepo.save).toHaveBeenCalledWith(detailRecord);
     });
 
     it('should not go below 0', async () => {
@@ -150,6 +179,47 @@ describe('UserService', () => {
         const result = await service.deductCreditScore('test-uuid-1234', type);
         expect(result.creditScore).toBe(100 + expected);
       }
+    });
+  });
+
+  describe('getCreditScoreDetails', () => {
+    it('should return paginated credit score detail records', async () => {
+      const detail = {
+        id: 'detail-1',
+        userId: 'test-uuid-1234',
+        user: mockUser,
+        changeAmount: -15,
+        reason: ViolationType.NO_SHOW,
+        beforeScore: 80,
+        afterScore: 65,
+        reservationId: 'reservation-uuid-1',
+        createdAt: new Date('2026-05-06T10:00:00.000Z'),
+      };
+      mockDetailRepo.findAndCount.mockResolvedValue([[detail], 1]);
+
+      const result = await service.getCreditScoreDetails('test-uuid-1234', 1, 10);
+
+      expect(mockDetailRepo.findAndCount).toHaveBeenCalledWith({
+        where: { userId: 'test-uuid-1234' },
+        order: { createdAt: 'DESC' },
+        skip: 0,
+        take: 10,
+      });
+      expect(result).toEqual({
+        items: [
+          {
+            id: 'detail-1',
+            userId: 'test-uuid-1234',
+            changeAmount: -15,
+            reason: ViolationType.NO_SHOW,
+            beforeScore: 80,
+            afterScore: 65,
+            reservationId: 'reservation-uuid-1',
+            createdAt: new Date('2026-05-06T10:00:00.000Z'),
+          },
+        ],
+        total: 1,
+      });
     });
   });
 

@@ -1,5 +1,18 @@
 import { defineConfig, UserConfigExport } from '@tarojs/cli'
 
+const getLocalIP = (): string => {
+  const interfaces = require('os').networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        console.log('cxh - ip ------', iface.address);
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
 export default defineConfig(async (merge, { command, mode }) => {
   const baseConfig: UserConfigExport = {
     projectName: 'seat-miniapp',
@@ -15,7 +28,7 @@ export default defineConfig(async (merge, { command, mode }) => {
     outputRoot: 'dist',
     plugins: [],
     defineConstants: {
-      TARO_APP_API_URL: JSON.stringify(process.env.TARO_APP_API_URL || 'http://localhost:3000'),
+      TARO_APP_API_URL: JSON.stringify(process.env.TARO_APP_API_URL || `http://${getLocalIP()}:3000`),
     },
     copy: {
       patterns: [],

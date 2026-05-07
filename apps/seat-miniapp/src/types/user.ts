@@ -20,6 +20,17 @@ export interface ILoginResponse {
   user: IUser;
 }
 
+export interface ICreditScoreDetail {
+  id: string;
+  userId: string;
+  changeAmount: number;
+  reason: string;
+  beforeScore: number;
+  afterScore: number;
+  reservationId?: string | null;
+  createdAt: string;
+}
+
 export interface IAuthState {
   user: IUser | null;
   accessToken: string | null;

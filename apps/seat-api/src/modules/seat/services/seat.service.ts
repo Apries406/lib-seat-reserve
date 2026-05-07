@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Seat } from '../entities/seat.entity';
 import { SeatStatusLog } from '../entities/seat-status-log.entity';
 import { SeatStatus, StatusTrigger } from '../enums/seat-status.enum';
+import { SeatGateway } from '../../websocket/seat.gateway';
 
 @Injectable()
 export class SeatService {
@@ -12,6 +13,7 @@ export class SeatService {
     private readonly seatRepo: Repository<Seat>,
     @InjectRepository(SeatStatusLog)
     private readonly logRepo: Repository<SeatStatusLog>,
+    private readonly seatGateway: SeatGateway,
   ) {}
 
   async findAll(query?: { area?: string; status?: SeatStatus }): Promise<Seat[]> {
@@ -82,6 +84,8 @@ export class SeatService {
       userId,
     });
 
+    this.seatGateway.emitSeatStatusChange(seatId, newStatus);
+
     return seat;
   }
 
@@ -102,6 +106,8 @@ export class SeatService {
       userId,
     });
 
+    this.seatGateway.emitSeatStatusChange(seatId, SeatStatus.RESERVED);
+
     return seat;
   }
 
@@ -121,6 +127,8 @@ export class SeatService {
       currentStatus: SeatStatus.FREE,
       trigger,
     });
+
+    this.seatGateway.emitSeatStatusChange(seatId, SeatStatus.FREE);
 
     return seat;
   }

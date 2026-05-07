@@ -1,0 +1,93 @@
+@import '../../styles/variables.scss';
+
+.credit-history {
+  min-height: 100vh;
+  background: $gray-50;
+  padding: 32px;
+
+  &__header {
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    display: block;
+    font-size: 40px;
+    font-weight: 700;
+    color: $gray-800;
+  }
+
+  &__subtitle {
+    display: block;
+    margin-top: 8px;
+    font-size: 24px;
+    color: $gray-400;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 32px;
+    background: #fff;
+    border-radius: $radius-lg;
+    box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06);
+  }
+
+  &__item-main {
+    flex: 1;
+  }
+
+  &__reason {
+    display: block;
+    font-size: 30px;
+    color: $gray-800;
+    font-weight: 600;
+  }
+
+  &__time,
+  &__score-range,
+  &__reservation {
+    display: block;
+    margin-top: 8px;
+    font-size: 24px;
+    color: $gray-400;
+  }
+
+  &__change {
+    font-size: 40px;
+    font-weight: 700;
+
+    &--plus {
+      color: $success;
+    }
+
+    &--minus {
+      color: $danger;
+    }
+  }
+
+  &__empty {
+    height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  &__empty-icon {
+    font-size: 96px;
+  }
+
+  &__empty-text {
+    font-size: 28px;
+    color: $gray-400;
+  }
+}

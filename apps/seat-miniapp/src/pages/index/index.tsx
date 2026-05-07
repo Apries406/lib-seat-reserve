@@ -1,8 +1,10 @@
+import Taro from '@tarojs/taro';
 import { View, Text, ScrollView } from '@tarojs/components';
-import { useLoad, navigateTo } from '@tarojs/taro';
+import { useDidShow, navigateTo } from '@tarojs/taro';
 import { useSeat } from '../../hooks/useSeat';
 import { useReservation } from '../../hooks/useReservation';
 import { SeatCard } from '../../components/SeatCard';
+import { ISeat } from '../../types/seat';
 import './index.scss';
 
 export default function Index() {
@@ -14,18 +16,43 @@ export default function Index() {
     switchArea,
     selectSeat,
     seatsByStatus,
+    fetchArea,
   } = useSeat();
 
-  const { currentReservation } = useReservation();
+  const { currentReservation, fetchCurrent } = useReservation();
 
-  useLoad(() => {
-    console.log('Index page loaded.');
+  useDidShow(() => {
+    fetchArea()
+    fetchCurrent();
   });
+
+  const handleSeatSelect = (seat: ISeat) => {
+    if (currentReservation?.seatId === seat.id) {
+      navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` });
+    } else if (currentReservation) {
+      Taro.showModal({
+        title: '已有预约',
+        content: '您当前已有预约，是否前往签到？',
+        confirmText: '前往签到',
+        success: (res) => {
+          if (res.confirm) {
+            navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` });
+          }
+        }
+      });
+    } else {
+      selectSeat(seat);
+    }
+  };
 
   const handleReserve = () => {
     if (selectedSeat) {
       navigateTo({ url: `/pages/seat/index?id=${selectedSeat.id}` });
     }
+  };
+
+  const handleAreaChange = (areaId: string) => {
+    switchArea(areaId);
   };
 
   return (
@@ -56,7 +83,7 @@ export default function Index() {
           <View
             key={area.id}
             className={`index__area-tab ${currentArea === area.id ? 'index__area-tab--active' : ''}`}
-            onClick={() => switchArea(area.id)}
+            onClick={() => handleAreaChange(area.id)}
           >
             <Text className="index__area-name">{area.name}</Text>
             <Text className="index__area-status">
@@ -91,7 +118,7 @@ export default function Index() {
               seat={seat}
               selected={selectedSeat?.id === seat.id}
               isMine={currentReservation?.seatId === seat.id}
-              onSelect={selectSeat}
+              onSelect={handleSeatSelect}
             />
           ))}
         </View>

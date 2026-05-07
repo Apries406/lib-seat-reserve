@@ -23,8 +23,10 @@ const STORAGE_KEYS = {
   USER_INFO: 'user_info',
 };
 
+const storedUser = Taro.getStorageSync(STORAGE_KEYS.USER_INFO) || null;
+
 export const useUserStore = create<UserStore>((set, get) => ({
-  user: null,
+  user: storedUser,
   accessToken: Taro.getStorageSync(STORAGE_KEYS.ACCESS_TOKEN) || null,
   refreshToken: Taro.getStorageSync(STORAGE_KEYS.REFRESH_TOKEN) || null,
   isLoggedIn: !!Taro.getStorageSync(STORAGE_KEYS.ACCESS_TOKEN),
@@ -62,7 +64,6 @@ export const useUserStore = create<UserStore>((set, get) => ({
       refreshToken: null,
       isLoggedIn: false,
     });
-    Taro.redirectTo({ url: '/pages/login/index' });
   },
 
   refreshUserInfo: async () => {

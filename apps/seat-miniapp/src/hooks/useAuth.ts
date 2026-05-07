@@ -25,6 +25,7 @@ export function useAuth() {
     });
     if (confirm) {
       await logout();
+      Taro.redirectTo({ url: '/pages/login/index' });
     }
   }, [logout]);
 

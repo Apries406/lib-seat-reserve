@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro';
 import { useUserStore } from '../store/userStore';
 
-const API_BASE_URL = 'http://192.168.1.244:3000';
+export const API_BASE_URL = TARO_APP_API_URL;
 
 interface RequestOptions {
   url: string;
@@ -84,9 +84,22 @@ export const api = {
       url: '/user/profile',
     }),
 
+  updateProfile: (data: { nickname?: string; avatar?: string }) =>
+    request<any>({
+      url: '/user/profile',
+      method: 'POST',
+      data,
+    }),
+
   getCreditScore: () =>
     request<{ score: number; level: string; canReserve: boolean }>({
       url: '/user/credit',
+    }),
+
+  getCreditScoreDetails: (params: { page: number; limit: number }) =>
+    request<{ items: any[]; total: number }>({
+      url: '/user/credit-records',
+      params,
     }),
 
   getAreas: () =>

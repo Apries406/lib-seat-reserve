@@ -1,0 +1,67 @@
+@import '../../styles/variables.scss';
+
+.current {
+  min-height: 100vh;
+  background: $gray-50;
+  padding: 32px;
+
+  &__card {
+    background: linear-gradient(135deg, #7B8AFF 0%, $primary 50%, $primary-dark 100%);
+    border-radius: $radius-lg;
+    padding: 48px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  &__seat {
+    font-size: 72px;
+    font-weight: 700;
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__area {
+    font-size: 32px;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  &__status {
+    font-size: 28px;
+    opacity: 0.75;
+  }
+
+  &__checkin-btn {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: $radius-md;
+    padding: 16px 32px;
+  }
+
+  &__checkin-text {
+    font-size: 28px;
+    font-weight: 600;
+  }
+
+  &__empty {
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  &__empty-icon {
+    font-size: 96px;
+  }
+
+  &__empty-text {
+    font-size: 28px;
+    color: $gray-400;
+  }
+}

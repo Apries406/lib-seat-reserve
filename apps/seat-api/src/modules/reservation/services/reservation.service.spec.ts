@@ -7,6 +7,8 @@ import { ReservationLockService, LuaScriptResult } from './reservation-lock.serv
 import { SeatService } from '../../seat/services/seat.service';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { SeatGateway } from '../../websocket/seat.gateway';
+import { UserService, ViolationType } from '../../user/services/user.service';
 
 const mockReservation: Reservation = {
   id: 'reservation-uuid-1',
@@ -51,6 +53,7 @@ describe('ReservationService', () => {
     find: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn(),
+    update: jest.fn(),
     create: jest.fn(),
     findAndCount: jest.fn(),
   };
@@ -70,6 +73,14 @@ describe('ReservationService', () => {
     toResponse: jest.fn(),
   };
 
+  const mockSeatGateway = {
+    emitReservationExpired: jest.fn(),
+  };
+
+  const mockUserService = {
+    deductCreditScore: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -77,6 +88,8 @@ describe('ReservationService', () => {
         { provide: getRepositoryToken(Reservation), useValue: mockReservationRepo },
         { provide: ReservationLockService, useValue: mockLockService },
         { provide: SeatService, useValue: mockSeatService },
+        { provide: SeatGateway, useValue: mockSeatGateway },
+        { provide: UserService, useValue: mockUserService },
       ],
     }).compile();
 
@@ -196,12 +209,17 @@ describe('ReservationService', () => {
     it('should expire reservation if past expiry time', async () => {
       const expiredReservation = { ...mockReservation, expiresAt: new Date(Date.now() - 1000) };
       mockReservationRepo.findOne.mockResolvedValue(expiredReservation);
-      mockReservationRepo.save.mockImplementation(async (r) => r);
+      mockReservationRepo.update.mockResolvedValue({ affected: 1 });
       mockLockService.releaseReservation.mockResolvedValue(undefined);
       mockSeatService.releaseSeat.mockResolvedValue(mockSeat);
+      mockUserService.deductCreditScore.mockResolvedValue({ creditScore: 85 });
 
       await expect(service.checkin('reservation-uuid-1', 'user-123')).rejects.toThrow(BadRequestException);
       expect(mockLockService.releaseReservation).toHaveBeenCalled();
+      expect(mockUserService.deductCreditScore).toHaveBeenCalledWith('user-123', ViolationType.NO_SHOW, {
+        reservationId: 'reservation-uuid-1',
+      });
+      expect(mockSeatGateway.emitReservationExpired).toHaveBeenCalledWith('user-123', 'reservation-uuid-1', 1);
     });
   });
 
@@ -209,7 +227,7 @@ describe('ReservationService', () => {
     it('should return current reservation', async () => {
       mockReservationRepo.findOne.mockResolvedValue(mockReservation);
       const result = await service.getCurrent('user-123');
-      expect(result).toEqual(mockReservation);
+      expect(result).toEqual(service.toResponse(mockReservation));
     });
 
     it('should return null if no current reservation', async () => {
@@ -240,16 +258,42 @@ describe('ReservationService', () => {
   });
 
   describe('handleExpiredReservations', () => {
-    it('should handle expired reservations', async () => {
+    it('should expire reservation, release seat and deduct credit score once', async () => {
       mockReservationRepo.find.mockResolvedValue([mockReservation]);
-      mockReservationRepo.save.mockImplementation(async (r) => r);
+      mockReservationRepo.update.mockResolvedValue({ affected: 1 });
       mockLockService.releaseReservation.mockResolvedValue(undefined);
       mockSeatService.releaseSeat.mockResolvedValue(mockSeat);
+      mockUserService.deductCreditScore.mockResolvedValue({ ...mockReservation.user, creditScore: 85 });
 
       await service.handleExpiredReservations();
-      expect(mockReservationRepo.save).toHaveBeenCalled();
+
+      expect(mockReservationRepo.update).toHaveBeenCalledWith(
+        {
+          id: mockReservation.id,
+          status: ReservationStatus.PENDING,
+        },
+        {
+          status: ReservationStatus.EXPIRED,
+        },
+      );
       expect(mockLockService.releaseReservation).toHaveBeenCalled();
       expect(mockSeatService.releaseSeat).toHaveBeenCalled();
+      expect(mockUserService.deductCreditScore).toHaveBeenCalledWith('user-123', ViolationType.NO_SHOW, {
+        reservationId: 'reservation-uuid-1',
+      });
+      expect(mockSeatGateway.emitReservationExpired).toHaveBeenCalledWith('user-123', 'reservation-uuid-1', 1);
+    });
+
+    it('should skip timeout side effects when reservation already processed', async () => {
+      mockReservationRepo.find.mockResolvedValue([mockReservation]);
+      mockReservationRepo.update.mockResolvedValue({ affected: 0 });
+
+      await service.handleExpiredReservations();
+
+      expect(mockLockService.releaseReservation).not.toHaveBeenCalled();
+      expect(mockSeatService.releaseSeat).not.toHaveBeenCalled();
+      expect(mockUserService.deductCreditScore).not.toHaveBeenCalled();
+      expect(mockSeatGateway.emitReservationExpired).not.toHaveBeenCalled();
     });
   });
 

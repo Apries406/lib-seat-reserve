@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Get, Body, Param, Query, UseGuards, Request, ParseIntPipe } from '@nestjs/common';
+import { Controller, Post, Delete, Get, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ReservationService } from '../services/reservation.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -52,7 +52,7 @@ export class ReservationController {
     const reservation = await this.reservationService.getCurrent(req.user.userId);
     return {
       code: 0,
-      data: reservation ? this.reservationService.toResponse(reservation) : null,
+      data: reservation,
     };
   }
 
@@ -62,10 +62,7 @@ export class ReservationController {
     const result = await this.reservationService.getHistory(req.user.userId, page, limit);
     return {
       code: 0,
-      data: {
-        items: result.items.map((r) => this.reservationService.toResponse(r)),
-        total: result.total,
-      },
+      data: result,
     };
   }
 }

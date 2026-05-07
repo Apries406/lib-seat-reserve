@@ -1,0 +1,80 @@
+@import '../../styles/variables.scss';
+
+.history {
+  min-height: 100vh;
+  background: $gray-50;
+  padding: 32px;
+
+  &__item {
+    background: #fff;
+    border-radius: $radius-lg;
+    padding: 32px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  &__seat {
+    font-size: 40px;
+    font-weight: 700;
+    color: $gray-800;
+  }
+
+  &__detail {
+    flex: 1;
+  }
+
+  &__area {
+    font-size: 28px;
+    color: $gray-600;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  &__date {
+    font-size: 24px;
+    color: $gray-400;
+  }
+
+  &__status {
+    padding: 8px 20px;
+    border-radius: $radius-full;
+    font-size: 22px;
+
+    &--active {
+      background: rgba($success, 0.1);
+      color: $success;
+    }
+
+    &--pending {
+      background: rgba($warning, 0.1);
+      color: $warning;
+    }
+
+    &--cancelled,
+    &--expired,
+    &--completed {
+      background: $gray-100;
+      color: $gray-400;
+    }
+  }
+
+  &__empty {
+    height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  &__empty-icon {
+    font-size: 96px;
+  }
+
+  &__empty-text {
+    font-size: 28px;
+    color: $gray-400;
+  }
+}

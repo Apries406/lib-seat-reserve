@@ -5,6 +5,8 @@ import { Reservation, ReservationStatus } from '../entities/reservation.entity';
 import { ReservationLockService, LuaScriptResult } from './reservation-lock.service';
 import { SeatService } from '../../seat/services/seat.service';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
+import { SeatGateway } from '../../websocket/seat.gateway';
+import { UserService, ViolationType } from '../../user/services/user.service';
 
 @Injectable()
 export class ReservationService {
@@ -13,6 +15,8 @@ export class ReservationService {
     private readonly reservationRepo: Repository<Reservation>,
     private readonly lockService: ReservationLockService,
     private readonly seatService: SeatService,
+    private readonly seatGateway: SeatGateway,
+    private readonly userService: UserService,
   ) {}
 
   async create(userId: string, seatId: number): Promise<Reservation> {
@@ -92,10 +96,7 @@ export class ReservationService {
     }
 
     if (new Date() > reservation.expiresAt) {
-      reservation.status = ReservationStatus.EXPIRED;
-      await this.reservationRepo.save(reservation);
-      await this.lockService.releaseReservation(reservation.seatId, userId);
-      await this.seatService.releaseSeat(reservation.seatId, StatusTrigger.TIMEOUT);
+      await this.expireReservation(reservation);
       throw new BadRequestException('预约已过期');
     }
 
@@ -107,17 +108,19 @@ export class ReservationService {
     return reservation;
   }
 
-  async getCurrent(userId: string): Promise<Reservation | null> {
-    return this.reservationRepo.findOne({
+  async getCurrent(userId: string): Promise<any> {
+    const reservation = await this.reservationRepo.findOne({
       where: {
         userId,
         status: ReservationStatus.PENDING,
       },
       relations: ['seat'],
     });
+    if (!reservation) return null;
+    return this.toResponse(reservation);
   }
 
-  async getHistory(userId: string, page: number = 1, limit: number = 10): Promise<{ items: Reservation[]; total: number }> {
+  async getHistory(userId: string, page: number = 1, limit: number = 10): Promise<{ items: any[]; total: number }> {
     const [items, total] = await this.reservationRepo.findAndCount({
       where: { userId },
       relations: ['seat'],
@@ -125,8 +128,8 @@ export class ReservationService {
       skip: (page - 1) * limit,
       take: limit,
     });
-
-    return { items, total };
+    const mapped = items.map((r) => this.toResponse(r));
+    return { items: mapped, total };
   }
 
   async handleExpiredReservations(): Promise<void> {
@@ -138,10 +141,7 @@ export class ReservationService {
     });
 
     for (const reservation of expired) {
-      reservation.status = ReservationStatus.EXPIRED;
-      await this.reservationRepo.save(reservation);
-      await this.lockService.releaseReservation(reservation.seatId, reservation.userId);
-      await this.seatService.releaseSeat(reservation.seatId, StatusTrigger.TIMEOUT);
+      await this.expireReservation(reservation);
     }
   }
 
@@ -149,6 +149,33 @@ export class ReservationService {
     const reservation = await this.reservationRepo.findOne({ where: { id } });
     if (!reservation) throw new NotFoundException('预约不存在');
     return reservation;
+  }
+
+  private async expireReservation(
+    reservation: Pick<Reservation, 'id' | 'userId' | 'seatId'>,
+  ): Promise<boolean> {
+    const updateResult = await this.reservationRepo.update(
+      {
+        id: reservation.id,
+        status: ReservationStatus.PENDING,
+      },
+      {
+        status: ReservationStatus.EXPIRED,
+      },
+    );
+
+    if (!updateResult.affected) {
+      return false;
+    }
+
+    await this.lockService.releaseReservation(reservation.seatId, reservation.userId);
+    await this.seatService.releaseSeat(reservation.seatId, StatusTrigger.TIMEOUT);
+    await this.userService.deductCreditScore(reservation.userId, ViolationType.NO_SHOW, {
+      reservationId: reservation.id,
+    });
+    this.seatGateway.emitReservationExpired(reservation.userId, reservation.id, reservation.seatId);
+
+    return true;
   }
 
   toResponse(reservation: Reservation) {

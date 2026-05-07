@@ -5,6 +5,10 @@ export default defineAppConfig({
     'pages/seat/index',
     'pages/checkin/index',
     'pages/profile/index',
+    'pages/credit-history/index',
+    'pages/current/index',
+    'pages/history/index',
+    'pages/favorites/index',
   ],
   window: {
     backgroundTextStyle: 'light',

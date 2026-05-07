@@ -27,3 +27,9 @@ export const mqttConfig = registerAs('mqtt', () => ({
   username: process.env.MQTT_USERNAME || '',
   password: process.env.MQTT_PASSWORD || '',
 }));
+
+export const wechatConfig = registerAs('wechat', () => ({
+  appId: process.env.WECHAT_APPID || '',
+  appSecret: process.env.WECHAT_APP_SECRET || '',
+  code2SessionUrl: 'https://api.weixin.qq.com/sns/jscode2session',
+}));

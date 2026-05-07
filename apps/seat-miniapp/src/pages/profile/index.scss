@@ -26,6 +26,13 @@
     align-items: center;
     justify-content: center;
     font-size: 56px;
+    overflow: hidden;
+  }
+
+  &__avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
   }
 
   &__name {
@@ -41,10 +48,28 @@
     display: block;
   }
 
+  &__edit-hint {
+    font-size: 24px;
+    color: #FFD700;
+    margin-top: 8px;
+    display: block;
+  }
+
   &__credit-score {
     background: rgba(255, 255, 255, 0.15);
     border-radius: $radius-md;
     padding: 32px;
+  }
+
+  &__credit-header-right {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  &__credit-link {
+    font-size: 24px;
+    opacity: 0.72;
   }
 
   &__credit-header {
@@ -81,6 +106,13 @@
     font-size: 24px;
     opacity: 0.65;
     margin-top: 16px;
+    display: block;
+  }
+
+  &__credit-action {
+    font-size: 22px;
+    opacity: 0.75;
+    margin-top: 12px;
     display: block;
   }
 

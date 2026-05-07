@@ -1,13 +1,29 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, CreditScoreLevel } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
+import { CreditScoreDetail } from '../entities/credit-score-detail.entity';
 
 export enum ViolationType {
   NO_SHOW = 'NO_SHOW',
   CHECKIN_NO_PERSON = 'CHECKIN_NO_PERSON',
   LONG_LEAVE = 'LONG_LEAVE',
   REMOTE_CHECKIN = 'REMOTE_CHECKIN',
+}
+
+interface DeductCreditScoreOptions {
+  reservationId?: string;
+}
+
+export interface CreditScoreDetailResponse {
+  id: string;
+  userId: string;
+  changeAmount: number;
+  reason: string;
+  beforeScore: number;
+  afterScore: number;
+  reservationId: string | null;
+  createdAt: Date;
 }
 
 const VIOLATION_SCORES = {
@@ -22,6 +38,8 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @InjectRepository(CreditScoreDetail)
+    private readonly creditScoreDetailRepo: Repository<CreditScoreDetail>,
   ) {}
 
   async findByOpenId(openId: string): Promise<User | null> {
@@ -53,15 +71,51 @@ export class UserService {
     return this.userRepo.save(user);
   }
 
-  async deductCreditScore(userId: string, violationType: ViolationType): Promise<User> {
+  async deductCreditScore(
+    userId: string,
+    violationType: ViolationType,
+    options: DeductCreditScoreOptions = {},
+  ): Promise<User> {
     const user = await this.findById(userId);
     const deduction = VIOLATION_SCORES[violationType];
+    const beforeScore = user.creditScore;
+    const afterScore = Math.max(0, beforeScore + deduction);
     
-    user.creditScore = Math.max(0, user.creditScore + deduction);
+    user.creditScore = afterScore;
     user.violationCount += 1;
     user.lastViolationAt = new Date();
+
+    const savedUser = await this.userRepo.save(user);
+
+    const detail = this.creditScoreDetailRepo.create({
+      userId,
+      changeAmount: deduction,
+      reason: violationType,
+      beforeScore,
+      afterScore,
+      reservationId: options.reservationId ?? null,
+    });
+    await this.creditScoreDetailRepo.save(detail);
     
-    return this.userRepo.save(user);
+    return savedUser;
+  }
+
+  async getCreditScoreDetails(
+    userId: string,
+    page: number = 1,
+    limit: number = 20,
+  ): Promise<{ items: CreditScoreDetailResponse[]; total: number }> {
+    const [items, total] = await this.creditScoreDetailRepo.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      items: items.map((item) => this.toCreditScoreDetailResponse(item)),
+      total,
+    };
   }
 
   async recoverCreditScore(): Promise<void> {
@@ -75,6 +129,13 @@ export class UserService {
       .execute();
   }
 
+  async updateProfile(id: string, nickname?: string, avatar?: string): Promise<User> {
+    const user = await this.findById(id);
+    if (nickname) user.nickname = nickname;
+    if (avatar) user.avatar = avatar;
+    return this.userRepo.save(user);
+  }
+
   toResponse(user: User) {
     return {
       id: user.id,
@@ -83,6 +144,19 @@ export class UserService {
       creditScore: user.creditScore,
       creditLevel: user.creditLevel,
       canReserve: user.canReserve,
+    };
+  }
+
+  toCreditScoreDetailResponse(detail: CreditScoreDetail) {
+    return {
+      id: detail.id,
+      userId: detail.userId,
+      changeAmount: detail.changeAmount,
+      reason: detail.reason,
+      beforeScore: detail.beforeScore,
+      afterScore: detail.afterScore,
+      reservationId: detail.reservationId,
+      createdAt: detail.createdAt,
     };
   }
 }

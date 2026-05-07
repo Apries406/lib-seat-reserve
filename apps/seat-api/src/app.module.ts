@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { databaseConfig, redisConfig, jwtConfig, mqttConfig } from './config/database.config';
+import { databaseConfig, redisConfig, jwtConfig, mqttConfig, wechatConfig } from './config/database.config';
 import { RedisProviderModule } from './config/redis.provider';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -16,7 +16,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, redisConfig, jwtConfig, mqttConfig],
+      load: [databaseConfig, redisConfig, jwtConfig, mqttConfig, wechatConfig],
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
@@ -44,4 +44,4 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     WebsocketModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

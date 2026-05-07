@@ -54,6 +54,7 @@ export class SeatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   emitReservationExpired(userId: string, reservationId: string, seatId: number) {
     this.server.emit(WsEvent.RESERVATION_EXPIRED, {
+      userId,
       reservationId,
       seatId,
       timestamp: Date.now(),
@@ -62,6 +63,7 @@ export class SeatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   emitCheckinReminder(userId: string, reservationId: string, expiresAt: Date) {
     this.server.emit(WsEvent.CHECKIN_REMINDER, {
+      userId,
       reservationId,
       expiresAt: expiresAt.toISOString(),
       timestamp: Date.now(),

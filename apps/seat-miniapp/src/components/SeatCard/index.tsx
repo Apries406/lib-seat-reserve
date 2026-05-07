@@ -15,7 +15,7 @@ export const SeatCard = memo<SeatCardProps>(({ seat, selected, isMine, onSelect 
   const isAvailable = seat.status === 'FREE';
 
   const handleClick = () => {
-    if (isAvailable && onSelect) {
+    if (onSelect) {
       onSelect(seat);
     }
   };
@@ -33,9 +33,8 @@ export const SeatCard = memo<SeatCardProps>(({ seat, selected, isMine, onSelect 
 
   return (
     <View
-      className={`seat-card ${selected ? 'seat-card--selected' : ''} ${
-        isAvailable ? 'seat-card--available' : 'seat-card--unavailable'
-      }`}
+      className={`seat-card ${selected ? 'seat-card--selected' : ''} ${isAvailable ? 'seat-card--available' : 'seat-card--unavailable'
+        }`}
       onClick={handleClick}
     >
       <View className="seat-card__header">
