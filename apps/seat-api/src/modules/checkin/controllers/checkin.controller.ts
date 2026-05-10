@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CheckinService } from '../services/checkin.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CheckinMethod } from '../enums/checkin.enum';
-import { IsString, IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsEnum, IsOptional } from 'class-validator';
 
 class CheckinDto {
   @IsString()
@@ -20,6 +20,11 @@ class CheckinDto {
   qrCode?: string;
 }
 
+class ScanDto {
+  @IsString()
+  qrToken: string;
+}
+
 @ApiTags('签到')
 @Controller('checkin')
 @UseGuards(JwtAuthGuard)
@@ -34,6 +39,17 @@ export class CheckinController {
     return {
       code: 0,
       message: '签到成功',
+      data: result,
+    };
+  }
+
+  @Post('scan')
+  @ApiOperation({ summary: '扫码查询座位状态' })
+  async scan(@Request() req, @Body() dto: ScanDto) {
+    const result = await this.checkinService.scan(req.user.userId, dto.qrToken);
+    return {
+      code: 0,
+      message: result.message,
       data: result,
     };
   }

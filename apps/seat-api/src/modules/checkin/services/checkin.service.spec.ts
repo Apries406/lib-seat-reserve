@@ -3,6 +3,7 @@ import { CheckinService } from './checkin.service';
 import { ReservationService } from '../../reservation/services/reservation.service';
 import { SeatService } from '../../seat/services/seat.service';
 import { LocationService } from './location.service';
+import { QrCodeService } from '../../seat/services/qr-code.service';
 import { UserService } from '../../user/services/user.service';
 import { CheckinMethod, CheckinFailReason, CHECKIN_FAIL_TEXT } from '../enums/checkin.enum';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
@@ -61,6 +62,16 @@ describe('CheckinService', () => {
     deductCreditScore: jest.fn(),
   };
 
+  const mockQrCodeService = {
+    verifySeatQrToken: jest.fn().mockImplementation((token: string) => {
+      if (token.startsWith('seat:1:')) {
+        return { valid: true, seatId: 1 };
+      }
+      return { valid: false, reason: '二维码无效' };
+    }),
+    generateSeatQrToken: jest.fn().mockReturnValue('seat:1:mocksignature'),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -69,6 +80,7 @@ describe('CheckinService', () => {
         { provide: SeatService, useValue: mockSeatService },
         { provide: LocationService, useValue: mockLocationService },
         { provide: UserService, useValue: mockUserService },
+        { provide: QrCodeService, useValue: mockQrCodeService },
       ],
     }).compile();
 
@@ -89,7 +101,7 @@ describe('CheckinService', () => {
       mockSeatService.findById.mockResolvedValue(mockSeat);
       mockReservationService.checkin.mockResolvedValue({ ...mockReservation, status: ReservationStatus.ACTIVE, checkedInAt: new Date() });
 
-      const qrCode = `SEAT_${mockSeat.id}_${mockSeat.area}_${mockSeat.seatNumber}`;
+      const qrCode = `seat:${mockSeat.id}:mocksignature`;
       const result = await service.checkin('user-123', {
         reservationId: 'reservation-uuid-1',
         method: CheckinMethod.QR_CODE,

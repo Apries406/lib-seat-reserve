@@ -178,4 +178,22 @@ export const api = {
       method: 'POST',
       data: { seatId },
     }),
+
+  scanQrCode: (qrToken: string) =>
+    request<{
+      seat: any;
+      statusText: string;
+      canReserve: boolean;
+      myReservation: any;
+      message: string;
+    }>({
+      url: '/checkin/scan',
+      method: 'POST',
+      data: { qrToken },
+    }),
+
+  getSeatQrCode: (seatId: number) =>
+    request<{ seatId: number; area: string; seatNumber: string; qrToken: string }>({
+      url: `/seats/${seatId}/qr-code`,
+    }),
 };

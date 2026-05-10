@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { ReservationService } from '../../reservation/services/reservation.service';
 import { SeatService } from '../../seat/services/seat.service';
 import { LocationService } from './location.service';
+import { QrCodeService } from '../../seat/services/qr-code.service';
 import { CheckinMethod, CheckinFailReason, CHECKIN_FAIL_TEXT } from '../enums/checkin.enum';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
 import { UserService, ViolationType } from '../../user/services/user.service';
@@ -13,6 +14,25 @@ export interface ICheckinRequest {
   qrCode?: string;
 }
 
+export interface IScanResult {
+  seat: {
+    id: number;
+    area: string;
+    seatNumber: string;
+    status: SeatStatus;
+    attributes: any;
+  };
+  statusText: string;
+  canReserve: boolean;
+  myReservation: {
+    id: string;
+    status: string;
+    expiresAt: Date;
+    checkedInAt?: Date;
+  } | null;
+  message: string;
+}
+
 @Injectable()
 export class CheckinService {
   constructor(
@@ -20,6 +40,7 @@ export class CheckinService {
     private readonly seatService: SeatService,
     private readonly locationService: LocationService,
     private readonly userService: UserService,
+    private readonly qrCodeService: QrCodeService,
   ) {}
 
   async checkin(userId: string, request: ICheckinRequest) {
@@ -51,8 +72,8 @@ export class CheckinService {
     }
 
     if (method === CheckinMethod.QR_CODE && qrCode) {
-      const expectedQrCode = `SEAT_${seat.id}_${seat.area}_${seat.seatNumber}`;
-      if (qrCode !== expectedQrCode) {
+      const verification = this.qrCodeService.verifySeatQrToken(qrCode);
+      if (!verification.valid || verification.seatId !== seat.id) {
         throw new BadRequestException('二维码无效');
       }
     }
@@ -65,6 +86,59 @@ export class CheckinService {
       seatNumber: seat.seatNumber,
       area: seat.area,
       checkedInAt: new Date(),
+    };
+  }
+
+  async scan(userId: string, qrToken: string): Promise<IScanResult> {
+    const verification = this.qrCodeService.verifySeatQrToken(qrToken);
+    if (!verification.valid) {
+      throw new BadRequestException(verification.reason || '二维码无效');
+    }
+
+    const seat = await this.seatService.findById(verification.seatId!);
+
+    const myReservation = await this.reservationService.getCurrent(userId);
+    const isMySeat = myReservation && myReservation.seatId === seat.id;
+
+    let canReserve = false;
+    let message = '';
+
+    switch (seat.status) {
+      case SeatStatus.FREE:
+        canReserve = !isMySeat;
+        message = isMySeat ? '您已预约此座位，请去签到' : '座位空闲，可以预约';
+        break;
+      case SeatStatus.RESERVED:
+        canReserve = false;
+        message = isMySeat ? '您已预约此座位，请去签到' : '该座位已被预约';
+        break;
+      case SeatStatus.IN_USE:
+        canReserve = false;
+        message = isMySeat ? '您正在使用此座位' : '该座位正在使用中';
+        break;
+      case SeatStatus.TEMP_LEAVE:
+        canReserve = false;
+        message = isMySeat ? '您正在使用此座位（暂离中）' : '该座位暂离中';
+        break;
+      case SeatStatus.MAYBE_LEAVE:
+        canReserve = false;
+        message = isMySeat ? '您正在使用此座位（可能离座）' : '该座位可能离座';
+        break;
+      case SeatStatus.IN_JUDGE:
+        canReserve = false;
+        message = '该座位正在犹豫中';
+        break;
+      default:
+        canReserve = false;
+        message = '该座位暂不可用';
+    }
+
+    return {
+      seat: this.seatService.toResponse(seat),
+      statusText: seat.status,
+      canReserve,
+      myReservation: isMySeat ? myReservation : null,
+      message,
     };
   }
 }

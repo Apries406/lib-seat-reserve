@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { Seat } from '../entities/seat.entity';
@@ -124,7 +124,11 @@ export class SeatService {
 
   async reserveSeat(seatId: number, userId: string, expiresAt: Date): Promise<Seat> {
     const seat = await this.findById(seatId);
-    
+
+    if (seat.status !== SeatStatus.FREE) {
+      throw new BadRequestException('座位已被占用，无法预约');
+    }
+
     seat.status = SeatStatus.RESERVED;
     seat.currentUserId = userId;
     seat.reservedUntil = expiresAt;
