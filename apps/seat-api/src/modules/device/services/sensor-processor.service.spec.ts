@@ -5,6 +5,7 @@ import { SeatService } from '../../seat/services/seat.service';
 import { Redis } from 'ioredis';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
 import { Reservation } from '../../reservation/entities/reservation.entity';
+import { UserService } from '../../user/services/user.service';
 
 const mockSeat = {
   id: 1,
@@ -43,6 +44,10 @@ const mockReservationRepo = {
   save: jest.fn(),
 };
 
+const mockUserService = {
+  deductCreditScore: jest.fn(),
+};
+
 describe('SensorProcessorService', () => {
   let service: SensorProcessorService;
   let seatService: SeatService;
@@ -55,6 +60,7 @@ describe('SensorProcessorService', () => {
         { provide: SeatService, useValue: mockSeatService },
         { provide: 'REDIS_CLIENT', useValue: mockRedis },
         { provide: getRepositoryToken(Reservation), useValue: mockReservationRepo },
+        { provide: UserService, useValue: mockUserService },
       ],
     }).compile();
 
