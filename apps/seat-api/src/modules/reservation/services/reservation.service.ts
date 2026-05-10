@@ -20,6 +20,11 @@ export class ReservationService {
   ) {}
 
   async create(userId: string, seatId: number): Promise<Reservation> {
+    const user = await this.userService.findById(userId);
+    if (!user.canReserve) {
+      throw new BadRequestException('信誉分过低，暂时无法预约座位');
+    }
+
     const seat = await this.seatService.findById(seatId);
 
     if (seat.status !== SeatStatus.FREE) {
@@ -29,7 +34,7 @@ export class ReservationService {
     const existing = await this.reservationRepo.findOne({
       where: {
         userId,
-        status: ReservationStatus.PENDING,
+        status: In([ReservationStatus.PENDING, ReservationStatus.ACTIVE]),
       },
     });
 

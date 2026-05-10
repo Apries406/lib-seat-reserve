@@ -58,6 +58,9 @@ export class Seat {
   @Column({ type: 'timestamp', nullable: true })
   reservedUntil: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true })
+  tempLeaveAt: Date | null;
+
   @OneToMany(() => SeatStatusLog, (log) => log.seat)
   statusLogs: SeatStatusLog[];
 

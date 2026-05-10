@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { Seat } from '../entities/seat.entity';
 import { SeatStatusLog } from '../entities/seat-status-log.entity';
 import { SeatStatus, StatusTrigger } from '../enums/seat-status.enum';
@@ -39,6 +39,16 @@ export class SeatService {
     return this.seatRepo.findOne({ where: { deviceId } });
   }
 
+  async findTempLeaveSeats(): Promise<Seat[]> {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    return this.seatRepo.find({
+      where: {
+        status: SeatStatus.TEMP_LEAVE,
+        tempLeaveAt: LessThan(oneHourAgo),
+      },
+    });
+  }
+
   async getAreas(): Promise<{ area: string; total: number; available: number }[]> {
     const result = await this.seatRepo
       .createQueryBuilder('seat')
@@ -72,6 +82,10 @@ export class SeatService {
     if (newStatus === SeatStatus.FREE) {
       seat.currentUserId = null;
       seat.reservedUntil = null;
+      seat.tempLeaveAt = null;
+    }
+    if (newStatus === SeatStatus.TEMP_LEAVE) {
+      seat.tempLeaveAt = new Date();
     }
 
     await this.seatRepo.save(seat);
