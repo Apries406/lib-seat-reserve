@@ -16,16 +16,28 @@ export class SeatService {
     private readonly seatGateway: SeatGateway,
   ) {}
 
-  async findAll(query?: { area?: string; status?: SeatStatus }): Promise<Seat[]> {
+  async findAll(query?: { area?: string; status?: SeatStatus; attributes?: Partial<{ hasOutlet?: boolean; isQuiet?: boolean; nearWindow?: boolean }> }): Promise<Seat[]> {
     const qb = this.seatRepo.createQueryBuilder('seat');
-    
+
     if (query?.area) {
       qb.andWhere('seat.area = :area', { area: query.area });
     }
     if (query?.status) {
       qb.andWhere('seat.status = :status', { status: query.status });
     }
-    
+    if (query?.attributes) {
+      const { hasOutlet, isQuiet, nearWindow } = query.attributes;
+      if (hasOutlet !== undefined) {
+        qb.andWhere("JSON_EXTRACT(seat.attributes, '$.hasOutlet') = :hasOutlet", { hasOutlet });
+      }
+      if (isQuiet !== undefined) {
+        qb.andWhere("JSON_EXTRACT(seat.attributes, '$.isQuiet') = :isQuiet", { isQuiet });
+      }
+      if (nearWindow !== undefined) {
+        qb.andWhere("JSON_EXTRACT(seat.attributes, '$.nearWindow') = :nearWindow", { nearWindow });
+      }
+    }
+
     return qb.orderBy('seat.area', 'ASC').addOrderBy('seat.seatNumber', 'ASC').getMany();
   }
 

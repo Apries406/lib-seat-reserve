@@ -43,7 +43,13 @@ export const useSeatStore = create<SeatStore>((set, get) => ({
   fetchSeats: async (area: string) => {
     set({ isLoading: true });
     try {
-      const seats = await api.getSeats({ area });
+      const { filter } = get();
+      const seats = await api.getSeats({
+        area,
+        hasOutlet: filter.hasOutlet,
+        isQuiet: filter.isQuiet,
+        nearWindow: filter.nearWindow,
+      });
       set({ seats, currentArea: area });
     } finally {
       set({ isLoading: false });

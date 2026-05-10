@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, ParseIntPipe, ParseBoolPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { SeatService } from '../services/seat.service';
 import { SeatStatus } from '../enums/seat-status.enum';
@@ -27,11 +27,18 @@ export class SeatController {
   @ApiOperation({ summary: '获取座位列表' })
   @ApiQuery({ name: 'area', required: false })
   @ApiQuery({ name: 'status', required: false, enum: SeatStatus })
+  @ApiQuery({ name: 'hasOutlet', required: false })
+  @ApiQuery({ name: 'isQuiet', required: false })
+  @ApiQuery({ name: 'nearWindow', required: false })
   async getSeats(
     @Query('area') area?: string,
     @Query('status') status?: SeatStatus,
+    @Query('hasOutlet', new ParseBoolPipe({ optional: true })) hasOutlet?: boolean,
+    @Query('isQuiet', new ParseBoolPipe({ optional: true })) isQuiet?: boolean,
+    @Query('nearWindow', new ParseBoolPipe({ optional: true })) nearWindow?: boolean,
   ) {
-    const seats = await this.seatService.findAll({ area, status });
+    const attributes = { hasOutlet, isQuiet, nearWindow };
+    const seats = await this.seatService.findAll({ area, status, attributes });
     return {
       code: 0,
       data: seats.map((s) => this.seatService.toResponse(s)),

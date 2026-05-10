@@ -107,7 +107,7 @@ export const api = {
       url: '/seats/areas',
     }),
 
-  getSeats: (params: { area?: string; status?: string }) =>
+  getSeats: (params: { area?: string; status?: string; hasOutlet?: boolean; isQuiet?: boolean; nearWindow?: boolean }) =>
     request<any[]>({
       url: '/seats',
       params,
