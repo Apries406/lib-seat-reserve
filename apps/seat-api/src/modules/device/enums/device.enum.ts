@@ -12,7 +12,7 @@ export enum DeviceCommandType {
 }
 
 export interface ISensorDataMessage {
-  deviceId: string;
+  deviceId?: string;
   timestamp: number;
   sensor: {
     type: 'infrared';
