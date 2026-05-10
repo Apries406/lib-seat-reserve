@@ -6,11 +6,12 @@ import { CheckinMethodSelector, CheckinMethod } from '../../components/CheckinMe
 import { useReservation } from '../../hooks/useReservation';
 import { api } from '../../services/api';
 import './index.scss';
+import Taro from '@tarojs/taro';
 
 export default function Checkin() {
   const router = useRouter();
   const reservationId = router.params.id || '';
-  
+
   const { currentReservation, formattedCountdown, countdown } = useReservation();
   const [isLoading, setIsLoading] = useState(false);
 

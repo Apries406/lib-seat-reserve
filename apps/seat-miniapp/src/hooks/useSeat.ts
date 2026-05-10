@@ -36,6 +36,10 @@ export function useSeat() {
     }
   }, [currentArea, fetchSeats]);
 
+  const refreshAreas = useCallback(() => {
+    return fetchAreas();
+  }, [fetchAreas]);
+
   const seatsByStatus = useCallback(() => {
     return {
       free: seats.filter((s) => s.status === 'FREE'),
@@ -53,6 +57,7 @@ export function useSeat() {
     isLoading,
     switchArea,
     selectSeat: handleSelectSeat,
+    refreshAreas,
     refreshSeats,
     resetFilter,
     seatsByStatus: seatsByStatus(),

@@ -4,7 +4,7 @@ import { useReservation } from '../../hooks/useReservation';
 import './index.scss';
 
 export default function History() {
-  const { history, fetchHistory, refreshHistory } = useReservation();
+  const { history, refreshHistory } = useReservation();
 
   useDidShow(() => {
     refreshHistory();

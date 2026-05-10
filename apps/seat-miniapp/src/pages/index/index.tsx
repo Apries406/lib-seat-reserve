@@ -16,14 +16,14 @@ export default function Index() {
     switchArea,
     selectSeat,
     seatsByStatus,
-    fetchArea,
+    refreshAreas,
   } = useSeat();
 
   const { currentReservation, fetchCurrent } = useReservation();
 
   useDidShow(() => {
-    fetchArea()
-    fetchCurrent();
+    void refreshAreas();
+    void fetchCurrent();
   });
 
   const handleSeatSelect = (seat: ISeat) => {

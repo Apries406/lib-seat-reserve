@@ -43,3 +43,6 @@ coverage
 tmp
 temp
 .cache
+
+graphify-out/
+.oh-my-code/
