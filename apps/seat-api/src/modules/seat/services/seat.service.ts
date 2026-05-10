@@ -95,6 +95,7 @@ export class SeatService {
       seat.currentUserId = null;
       seat.reservedUntil = null;
       seat.tempLeaveAt = null;
+      seat.lastFreedAt = new Date();
     }
     if (newStatus === SeatStatus.TEMP_LEAVE) {
       seat.tempLeaveAt = new Date();
@@ -144,6 +145,8 @@ export class SeatService {
     seat.status = SeatStatus.FREE;
     seat.currentUserId = null;
     seat.reservedUntil = null;
+    seat.tempLeaveAt = null;
+    seat.lastFreedAt = new Date();
 
     await this.seatRepo.save(seat);
 

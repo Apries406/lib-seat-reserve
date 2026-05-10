@@ -1,6 +1,7 @@
 export default defineAppConfig({
   pages: [
     'pages/index/index',
+    'pages/seat-select/index',
     'pages/login/index',
     'pages/seat/index',
     'pages/checkin/index',

@@ -148,4 +148,11 @@ export const api = {
       url: '/reservations/history',
       params,
     }),
+
+  smartReserve: (data: { nearWindow?: boolean; hasOutlet?: boolean; isQuiet?: boolean; floor?: string; area?: string; acceptAdjustment: boolean }) =>
+    request<{ reservation: any; seat: any; adjusted: boolean; message: string }>({
+      url: '/smart-reserve',
+      method: 'POST',
+      data,
+    }),
 };
