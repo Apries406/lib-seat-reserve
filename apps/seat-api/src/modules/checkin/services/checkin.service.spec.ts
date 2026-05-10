@@ -3,6 +3,7 @@ import { CheckinService } from './checkin.service';
 import { ReservationService } from '../../reservation/services/reservation.service';
 import { SeatService } from '../../seat/services/seat.service';
 import { LocationService } from './location.service';
+import { UserService } from '../../user/services/user.service';
 import { CheckinMethod, CheckinFailReason, CHECKIN_FAIL_TEXT } from '../enums/checkin.enum';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
 import { ReservationStatus } from '../../reservation/entities/reservation.entity';
@@ -56,6 +57,10 @@ describe('CheckinService', () => {
     verifyLocation: jest.fn(),
   };
 
+  const mockUserService = {
+    deductCreditScore: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +68,7 @@ describe('CheckinService', () => {
         { provide: ReservationService, useValue: mockReservationService },
         { provide: SeatService, useValue: mockSeatService },
         { provide: LocationService, useValue: mockLocationService },
+        { provide: UserService, useValue: mockUserService },
       ],
     }).compile();
 

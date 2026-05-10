@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { SensorProcessorService } from './sensor-processor.service';
 import { SeatService } from '../../seat/services/seat.service';
 import { Redis } from 'ioredis';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
+import { Reservation } from '../../reservation/entities/reservation.entity';
 
 const mockSeat = {
   id: 1,
@@ -27,12 +29,18 @@ const mockRedis = {
   ltrim: jest.fn(),
   expire: jest.fn(),
   lrange: jest.fn(),
+  del: jest.fn(),
 };
 
 const mockSeatService = {
   findByDeviceId: jest.fn(),
   updateStatus: jest.fn(),
   findById: jest.fn(),
+};
+
+const mockReservationRepo = {
+  findOne: jest.fn(),
+  save: jest.fn(),
 };
 
 describe('SensorProcessorService', () => {
@@ -46,6 +54,7 @@ describe('SensorProcessorService', () => {
         SensorProcessorService,
         { provide: SeatService, useValue: mockSeatService },
         { provide: 'REDIS_CLIENT', useValue: mockRedis },
+        { provide: getRepositoryToken(Reservation), useValue: mockReservationRepo },
       ],
     }).compile();
 
@@ -68,7 +77,7 @@ describe('SensorProcessorService', () => {
       mockRedis.lrange.mockResolvedValue([]);
 
       await service.process('device-001', {
-        sensor: { value: true },
+        sensor: { type: 'infrared' as const, value: true, confidence: 0.9 },
         timestamp: Date.now(),
       });
       expect(mockSeatService.findByDeviceId).toHaveBeenCalledWith('device-001');
@@ -77,7 +86,7 @@ describe('SensorProcessorService', () => {
     it('should skip if device not associated with seat', async () => {
       mockSeatService.findByDeviceId.mockResolvedValue(null);
       await service.process('unknown-device', {
-        sensor: { value: true },
+        sensor: { type: 'infrared' as const, value: true, confidence: 0.9 },
         timestamp: Date.now(),
       });
       expect(mockSeatService.updateStatus).not.toHaveBeenCalled();

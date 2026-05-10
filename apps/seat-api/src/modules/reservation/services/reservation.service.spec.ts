@@ -78,7 +78,23 @@ describe('ReservationService', () => {
   };
 
   const mockUserService = {
+    findById: jest.fn(),
     deductCreditScore: jest.fn(),
+  };
+
+  const mockUser = {
+    id: 'user-123',
+    openId: 'openid-123',
+    nickname: 'Test User',
+    avatar: null,
+    creditScore: 100,
+    violationCount: 0,
+    lastViolationAt: null,
+    deviceFingerprint: null,
+    get creditLevel() { return 'EXCELLENT'; },
+    get canReserve() { return this.creditScore >= 65; },
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
   beforeEach(async () => {
@@ -106,6 +122,7 @@ describe('ReservationService', () => {
 
   describe('create', () => {
     it('should create a reservation successfully', async () => {
+      mockUserService.findById.mockResolvedValue(mockUser);
       mockSeatService.findById.mockResolvedValue(mockSeat);
       mockReservationRepo.findOne.mockResolvedValue(null);
       mockLockService.tryReserve.mockResolvedValue({ success: true, result: LuaScriptResult.SUCCESS });
@@ -119,6 +136,7 @@ describe('ReservationService', () => {
     });
 
     it('should throw if seat is not free', async () => {
+      mockUserService.findById.mockResolvedValue(mockUser);
       const busySeat = { ...mockSeat, status: SeatStatus.RESERVED };
       mockSeatService.findById.mockResolvedValue(busySeat);
 
@@ -126,6 +144,7 @@ describe('ReservationService', () => {
     });
 
     it('should throw if user already has pending reservation', async () => {
+      mockUserService.findById.mockResolvedValue(mockUser);
       mockSeatService.findById.mockResolvedValue(mockSeat);
       mockReservationRepo.findOne.mockResolvedValue(mockReservation);
 
@@ -133,6 +152,7 @@ describe('ReservationService', () => {
     });
 
     it('should throw if lock fails with SEAT_RESERVED', async () => {
+      mockUserService.findById.mockResolvedValue(mockUser);
       mockSeatService.findById.mockResolvedValue(mockSeat);
       mockReservationRepo.findOne.mockResolvedValue(null);
       mockLockService.tryReserve.mockResolvedValue({ success: false, result: LuaScriptResult.SEAT_RESERVED });
@@ -141,9 +161,17 @@ describe('ReservationService', () => {
     });
 
     it('should throw if lock fails with USER_HAS_RESERVATION', async () => {
+      mockUserService.findById.mockResolvedValue(mockUser);
       mockSeatService.findById.mockResolvedValue(mockSeat);
       mockReservationRepo.findOne.mockResolvedValue(null);
       mockLockService.tryReserve.mockResolvedValue({ success: false, result: LuaScriptResult.USER_HAS_RESERVATION });
+
+      await expect(service.create('user-123', 1)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw if user credit score is too low', async () => {
+      const lowCreditUser = { ...mockUser, creditScore: 60 };
+      mockUserService.findById.mockResolvedValue(lowCreditUser);
 
       await expect(service.create('user-123', 1)).rejects.toThrow(BadRequestException);
     });
@@ -309,6 +337,7 @@ describe('ReservationService', () => {
         reservedAt: mockReservation.reservedAt,
         expiresAt: mockReservation.expiresAt,
         checkedInAt: mockReservation.checkedInAt,
+        checkedOutAt: mockReservation.checkedOutAt,
       });
     });
   });
