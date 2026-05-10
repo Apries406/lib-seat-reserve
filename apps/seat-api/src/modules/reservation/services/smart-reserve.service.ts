@@ -1,11 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, Not } from 'typeorm';
+import { Repository, IsNull, Not, MoreThan } from 'typeorm';
 import { Seat } from '../../seat/entities/seat.entity';
-import { SeatStatus } from '../../seat/enums/seat-status.enum';
+import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
 import { SeatService } from '../../seat/services/seat.service';
 import { ReservationLockService } from './reservation-lock.service';
+import { JudgeLockService } from './judge-lock.service';
 import { ReservationService } from './reservation.service';
+import { Reservation, ReservationStatus } from '../entities/reservation.entity';
 import { UserService } from '../../user/services/user.service';
 import { SeatUsageStatistic } from '../../statistics/entities/seat-usage.entity';
 
@@ -23,6 +25,13 @@ interface ISeatCandidate {
   score: number;
 }
 
+interface IUserPreference {
+  preferredArea?: string;
+  nearWindowWeight: number;
+  hasOutletWeight: number;
+  isQuietWeight: number;
+}
+
 @Injectable()
 export class SmartReserveService {
   constructor(
@@ -30,8 +39,11 @@ export class SmartReserveService {
     private readonly seatRepo: Repository<Seat>,
     @InjectRepository(SeatUsageStatistic)
     private readonly usageRepo: Repository<SeatUsageStatistic>,
+    @InjectRepository(Reservation)
+    private readonly reservationRepo: Repository<Reservation>,
     private readonly seatService: SeatService,
     private readonly lockService: ReservationLockService,
+    private readonly judgeLockService: JudgeLockService,
     private readonly reservationService: ReservationService,
     private readonly userService: UserService,
   ) {}
@@ -63,6 +75,77 @@ export class SmartReserveService {
     };
   }
 
+  async preview(userId: string, preference: ISmartReservePreference) {
+    const user = await this.userService.findById(userId);
+    if (!user.canReserve) {
+      throw new BadRequestException('信誉分过低，暂时无法预约座位');
+    }
+
+    const current = await this.reservationService.getCurrent(userId);
+    if (current) {
+      throw new BadRequestException('您已有进行中的预约');
+    }
+
+    const candidates = await this.findCandidates(userId, preference);
+
+    if (!candidates.seat) {
+      throw new BadRequestException(candidates.message);
+    }
+
+    const locked = await this.judgeLockService.lock(candidates.seat.id, userId);
+    if (!locked) {
+      throw new BadRequestException('座位已被锁定，请重试');
+    }
+
+    await this.seatService.updateStatus(candidates.seat.id, SeatStatus.IN_JUDGE, StatusTrigger.RESERVE, userId);
+
+    return {
+      seat: this.seatService.toResponse(candidates.seat),
+      adjusted: candidates.adjusted,
+      message: candidates.message,
+      expiresIn: 60,
+    };
+  }
+
+  async confirm(userId: string, seatId: number) {
+    const ownerId = await this.judgeLockService.getUserId(seatId);
+    if (ownerId !== userId) {
+      throw new BadRequestException('无权确认此座位');
+    }
+
+    const seat = await this.seatService.findById(seatId);
+    if (seat.status !== SeatStatus.IN_JUDGE) {
+      throw new BadRequestException('座位状态不允许确认');
+    }
+
+    await this.judgeLockService.unlock(seatId);
+
+    const reservation = await this.reservationService.create(userId, seatId);
+
+    return {
+      reservation: this.reservationService.toResponse(reservation),
+      seat: this.seatService.toResponse(seat),
+      message: '预约成功',
+    };
+  }
+
+  async cancelPreview(userId: string, seatId: number) {
+    const ownerId = await this.judgeLockService.getUserId(seatId);
+    if (ownerId !== userId) {
+      throw new BadRequestException('无权取消此座位');
+    }
+
+    const seat = await this.seatService.findById(seatId);
+    if (seat.status !== SeatStatus.IN_JUDGE) {
+      throw new BadRequestException('座位状态不允许取消');
+    }
+
+    await this.judgeLockService.unlock(seatId);
+    await this.seatService.releaseSeat(seatId, StatusTrigger.RELEASE);
+
+    return { message: '已取消' };
+  }
+
   private async findCandidates(
     userId: string,
     preference: ISmartReservePreference,
@@ -75,7 +158,7 @@ export class SmartReserveService {
 
       if (seats.length === 0) continue;
 
-      const scored = await this.scoreSeats(seats);
+      const scored = await this.scoreSeats(seats, userId);
       const sorted = scored.sort((a, b) => b.score - a.score);
 
       for (const candidate of sorted) {
@@ -174,9 +257,10 @@ export class SmartReserveService {
     return qb.getMany();
   }
 
-  private async scoreSeats(seats: Seat[]): Promise<ISeatCandidate[]> {
+  private async scoreSeats(seats: Seat[], userId: string): Promise<ISeatCandidate[]> {
     const seatIds = seats.map((s) => s.id);
     const today = new Date().toISOString().split('T')[0];
+    const userPref = await this.calculateUserPreference(userId);
 
     const usages = await this.usageRepo.find({
       where: {
@@ -202,7 +286,58 @@ export class SmartReserveService {
         score += 20;
       }
 
+      if (userPref.preferredArea && seat.area === userPref.preferredArea) {
+        score += 30;
+      }
+      if (seat.attributes) {
+        if (seat.attributes.nearWindow && userPref.nearWindowWeight > 0) score += 15 * userPref.nearWindowWeight;
+        if (seat.attributes.hasOutlet && userPref.hasOutletWeight > 0) score += 15 * userPref.hasOutletWeight;
+        if (seat.attributes.isQuiet && userPref.isQuietWeight > 0) score += 15 * userPref.isQuietWeight;
+      }
+
       return { seat, score };
     });
+  }
+
+  private async calculateUserPreference(userId: string): Promise<IUserPreference> {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const history = await this.reservationRepo.find({
+      where: {
+        userId,
+        status: ReservationStatus.COMPLETED,
+        checkedInAt: Not(IsNull()) as any,
+        createdAt: MoreThan(thirtyDaysAgo),
+      },
+      relations: ['seat'],
+    });
+
+    if (history.length === 0) {
+      return { preferredArea: undefined, nearWindowWeight: 0, hasOutletWeight: 0, isQuietWeight: 0 };
+    }
+
+    const areaCount = new Map<string, number>();
+    let nearWindowCount = 0;
+    let hasOutletCount = 0;
+    let isQuietCount = 0;
+
+    for (const r of history) {
+      if (r.seat) {
+        areaCount.set(r.seat.area, (areaCount.get(r.seat.area) || 0) + 1);
+        if (r.seat.attributes?.nearWindow) nearWindowCount++;
+        if (r.seat.attributes?.hasOutlet) hasOutletCount++;
+        if (r.seat.attributes?.isQuiet) isQuietCount++;
+      }
+    }
+
+    const preferredArea = Array.from(areaCount.entries()).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const total = history.length;
+
+    return {
+      preferredArea,
+      nearWindowWeight: nearWindowCount / total,
+      hasOutletWeight: hasOutletCount / total,
+      isQuietWeight: isQuietCount / total,
+    };
   }
 }

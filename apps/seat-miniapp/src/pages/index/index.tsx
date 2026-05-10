@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, ScrollView } from '@tarojs/components';
 import { useDidShow, navigateTo, showToast, showModal } from '@tarojs/taro';
 import { useReservation } from '../../hooks/useReservation';
@@ -22,14 +22,77 @@ export default function Index() {
     acceptAdjustment: true,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [previewCountdown, setPreviewCountdown] = useState(0);
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const previewSeatRef = useRef<any>(null);
 
   useDidShow(() => {
     void fetchCurrent();
   });
 
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+      }
+    };
+  }, []);
+
+  const clearCountdown = useCallback(() => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setPreviewCountdown(0);
+  }, []);
+
+  const startCountdown = useCallback((seconds: number) => {
+    clearCountdown();
+    setPreviewCountdown(seconds);
+    countdownTimerRef.current = setInterval(() => {
+      setPreviewCountdown((prev) => {
+        if (prev <= 1) {
+          clearCountdown();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [clearCountdown]);
+
   const togglePreference = useCallback((key: 'nearWindow' | 'hasOutlet' | 'isQuiet') => {
     setPreferences((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
+
+  const handleConfirmPreview = useCallback(async (seatId: number) => {
+    try {
+      setIsLoading(true);
+      const result = await api.confirmPreview(seatId);
+      clearCountdown();
+      showToast({ title: '预约成功', icon: 'success' });
+      void fetchCurrent();
+      setTimeout(() => {
+        if (result.reservation?.id) {
+          navigateTo({ url: `/pages/checkin/index?id=${result.reservation.id}` });
+        }
+      }, 800);
+    } catch (error: any) {
+      const message = error.message || '确认失败';
+      showToast({ title: message, icon: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clearCountdown, fetchCurrent]);
+
+  const handleCancelPreview = useCallback(async (seatId: number) => {
+    try {
+      await api.cancelPreview(seatId);
+    } catch {
+      // ignore cancel error
+    }
+    clearCountdown();
+    previewSeatRef.current = null;
+  }, [clearCountdown]);
 
   const handleSmartReserve = useCallback(async () => {
     if (currentReservation) {
@@ -39,7 +102,7 @@ export default function Index() {
 
     setIsLoading(true);
     try {
-      const result = await api.smartReserve({
+      const result = await api.previewSeat({
         nearWindow: preferences.nearWindow || undefined,
         hasOutlet: preferences.hasOutlet || undefined,
         isQuiet: preferences.isQuiet || undefined,
@@ -47,22 +110,25 @@ export default function Index() {
         acceptAdjustment: preferences.acceptAdjustment,
       });
 
-      if (result.adjusted) {
-        await showModal({
-          title: '预约成功（已调剂）',
-          content: `${result.message}\n座位：${result.seat.area}区 ${result.seat.seatNumber}`,
-          showCancel: false,
-        });
-      } else {
-        showToast({ title: '预约成功', icon: 'success' });
-      }
+      previewSeatRef.current = result.seat;
+      startCountdown(result.expiresIn || 60);
 
-      void fetchCurrent();
-      setTimeout(() => {
-        if (result.reservation?.id) {
-          navigateTo({ url: `/pages/checkin/index?id=${result.reservation.id}` });
-        }
-      }, 800);
+      const area = result.seat.area;
+      const seatNumber = result.seat.seatNumber;
+      const adjustedText = result.adjusted ? `（已调剂：${result.message}）` : '';
+
+      const { confirm } = await showModal({
+        title: '确认预约',
+        content: `为您推荐座位：${area}区 ${seatNumber}${adjustedText}\n请在 ${result.expiresIn || 60} 秒内确认`,
+        confirmText: '确认',
+        cancelText: '取消',
+      });
+
+      if (confirm) {
+        await handleConfirmPreview(result.seat.id);
+      } else {
+        await handleCancelPreview(result.seat.id);
+      }
     } catch (error: any) {
       const message = error.message || '预约失败';
       if (message.includes('暂无符合偏好') && !preferences.acceptAdjustment) {
@@ -81,7 +147,7 @@ export default function Index() {
     } finally {
       setIsLoading(false);
     }
-  }, [preferences, currentReservation, fetchCurrent]);
+  }, [preferences, currentReservation, startCountdown, handleConfirmPreview, handleCancelPreview, fetchCurrent]);
 
   const goToSeatSelect = useCallback(() => {
     navigateTo({ url: '/pages/seat-select/index' });
@@ -174,7 +240,7 @@ export default function Index() {
           onClick={handleSmartReserve}
         >
           <Text className="index__smart-btn-text">
-            {isLoading ? '预约中...' : '一键预约'}
+            {isLoading ? '预约中...' : previewCountdown > 0 ? `犹豫中 (${previewCountdown}s)` : '一键预约'}
           </Text>
         </View>
 

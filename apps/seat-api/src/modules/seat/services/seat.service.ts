@@ -100,6 +100,12 @@ export class SeatService {
     if (newStatus === SeatStatus.TEMP_LEAVE) {
       seat.tempLeaveAt = new Date();
     }
+    if (newStatus === SeatStatus.IN_JUDGE) {
+      seat.judgeExpiresAt = new Date(Date.now() + 60 * 1000);
+    }
+    if (newStatus !== SeatStatus.IN_JUDGE) {
+      seat.judgeExpiresAt = null;
+    }
 
     await this.seatRepo.save(seat);
 

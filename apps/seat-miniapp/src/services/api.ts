@@ -155,4 +155,25 @@ export const api = {
       method: 'POST',
       data,
     }),
+
+  previewSeat: (data: { nearWindow?: boolean; hasOutlet?: boolean; isQuiet?: boolean; floor?: string; area?: string; acceptAdjustment: boolean }) =>
+    request<{ seat: any; adjusted: boolean; message: string; expiresIn: number }>({
+      url: '/smart-reserve/preview',
+      method: 'POST',
+      data,
+    }),
+
+  confirmPreview: (seatId: number) =>
+    request<{ reservation: any; seat: any; message: string }>({
+      url: '/smart-reserve/confirm',
+      method: 'POST',
+      data: { seatId },
+    }),
+
+  cancelPreview: (seatId: number) =>
+    request<{ message: string }>({
+      url: '/smart-reserve/cancel-preview',
+      method: 'POST',
+      data: { seatId },
+    }),
 };

@@ -6,6 +6,7 @@ import { ISensorDataMessage } from '../enums/device.enum';
 import { SeatService } from '../../seat/services/seat.service';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
 import { Reservation, ReservationStatus } from '../../reservation/entities/reservation.entity';
+import { UserService, ViolationType } from '../../user/services/user.service';
 
 const JUDGE_CONFIG = {
   leave: {
@@ -29,6 +30,7 @@ export class SensorProcessorService {
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     @InjectRepository(Reservation)
     private readonly reservationRepo: Repository<Reservation>,
+    private readonly userService: UserService,
   ) {}
 
   async process(deviceId: string, message: ISensorDataMessage): Promise<void> {
@@ -63,6 +65,7 @@ export class SensorProcessorService {
         const shouldLeave = await this.judgeLeave(seat.id);
         if (shouldLeave) {
           await this.seatService.updateStatus(seat.id, SeatStatus.MAYBE_LEAVE, StatusTrigger.SENSOR_LEAVE, seat.currentUserId);
+          await this.handleCheckinNoPerson(seat.id);
         }
       }
 
@@ -102,6 +105,37 @@ export class SensorProcessorService {
     await this.redis.del(`seat:lock:${seatId}`, `seat:reserved:${seatId}`, `user:seat:${reservation.userId}`);
 
     this.logger.log(`Auto-checked-in reservation ${reservation.id} for seat ${seatId}`);
+  }
+
+  private async handleCheckinNoPerson(seatId: number): Promise<void> {
+    const reservation = await this.reservationRepo.findOne({
+      where: {
+        seatId,
+        status: ReservationStatus.ACTIVE,
+      },
+      order: { checkedInAt: 'DESC' },
+    });
+
+    if (!reservation || !reservation.checkedInAt) {
+      return;
+    }
+
+    const minutesSinceCheckin = (Date.now() - new Date(reservation.checkedInAt).getTime()) / (1000 * 60);
+    if (minutesSinceCheckin > 30) {
+      return;
+    }
+
+    reservation.status = ReservationStatus.COMPLETED;
+    reservation.checkedOutAt = new Date();
+    await this.reservationRepo.save(reservation);
+
+    await this.userService.deductCreditScore(reservation.userId, ViolationType.CHECKIN_NO_PERSON, {
+      reservationId: reservation.id,
+    });
+
+    await this.seatService.releaseSeat(seatId, StatusTrigger.SENSOR_LEAVE);
+
+    this.logger.log(`Detected checkin-no-person for reservation ${reservation.id}, seat ${seatId}`);
   }
 
   async recordObservation(seatId: number, isOccupied: boolean): Promise<void> {

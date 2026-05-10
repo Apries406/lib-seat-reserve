@@ -64,6 +64,9 @@ export class Seat {
   @Column({ type: 'timestamp', nullable: true })
   lastFreedAt: Date | null;
 
+  @Column({ type: 'timestamp', nullable: true })
+  judgeExpiresAt: Date | null;
+
   @OneToMany(() => SeatStatusLog, (log) => log.seat)
   statusLogs: SeatStatusLog[];
 

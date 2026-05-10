@@ -48,6 +48,7 @@ export enum SeatStatus {
   IN_USE = 'IN_USE',
   TEMP_LEAVE = 'TEMP_LEAVE',
   MAYBE_LEAVE = 'MAYBE_LEAVE',
+  IN_JUDGE = 'IN_JUDGE',
 }
 
 export interface IArea {
