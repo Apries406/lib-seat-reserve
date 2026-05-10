@@ -47,6 +47,7 @@ export enum SeatStatus {
   RESERVED = 'RESERVED',
   IN_USE = 'IN_USE',
   TEMP_LEAVE = 'TEMP_LEAVE',
+  MAYBE_LEAVE = 'MAYBE_LEAVE',
 }
 
 export interface IArea {

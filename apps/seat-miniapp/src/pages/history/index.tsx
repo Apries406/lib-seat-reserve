@@ -1,7 +1,16 @@
 import { View, Text } from '@tarojs/components';
 import { useDidShow } from '@tarojs/taro';
 import { useReservation } from '../../hooks/useReservation';
+import { ReservationStatus } from '../../types/reservation';
 import './index.scss';
+
+const STATUS_LABELS: Record<string, string> = {
+  [ReservationStatus.PENDING]: '待签到',
+  [ReservationStatus.ACTIVE]: '使用中',
+  [ReservationStatus.COMPLETED]: '已完成',
+  [ReservationStatus.CANCELLED]: '已取消',
+  [ReservationStatus.EXPIRED]: '已过期',
+};
 
 export default function History() {
   const { history, refreshHistory } = useReservation();
@@ -23,7 +32,7 @@ export default function History() {
               </Text>
             </View>
             <View className={`history__status history__status--${item.status?.toLowerCase()}`}>
-              <Text className="history__status-text">{item.status}</Text>
+              <Text className="history__status-text">{STATUS_LABELS[item.status] || item.status}</Text>
             </View>
           </View>
         ))

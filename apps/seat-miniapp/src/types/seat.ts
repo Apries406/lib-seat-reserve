@@ -3,6 +3,7 @@ export enum SeatStatus {
   RESERVED = 'RESERVED',
   IN_USE = 'IN_USE',
   TEMP_LEAVE = 'TEMP_LEAVE',
+  MAYBE_LEAVE = 'MAYBE_LEAVE',
 }
 
 export const SEAT_STATUS_TEXT: Record<SeatStatus, string> = {
@@ -10,6 +11,7 @@ export const SEAT_STATUS_TEXT: Record<SeatStatus, string> = {
   [SeatStatus.RESERVED]: '已预约',
   [SeatStatus.IN_USE]: '使用中',
   [SeatStatus.TEMP_LEAVE]: '暂离',
+  [SeatStatus.MAYBE_LEAVE]: '可能离座',
 };
 
 export const SEAT_STATUS_COLORS: Record<SeatStatus, string> = {
@@ -17,6 +19,7 @@ export const SEAT_STATUS_COLORS: Record<SeatStatus, string> = {
   [SeatStatus.RESERVED]: '#FFB84D',
   [SeatStatus.IN_USE]: '#B8BDD4',
   [SeatStatus.TEMP_LEAVE]: '#FFB84D',
+  [SeatStatus.MAYBE_LEAVE]: '#FFB84D',
 };
 
 export interface ISeatAttributes {
