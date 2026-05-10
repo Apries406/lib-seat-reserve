@@ -4,9 +4,10 @@ import { Device } from './entities/device.entity';
 import { MqttService } from './services/mqtt.service';
 import { SensorProcessorService } from './services/sensor-processor.service';
 import { SeatModule } from '../seat/seat.module';
+import { Reservation } from '../reservation/entities/reservation.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Device]), SeatModule],
+  imports: [TypeOrmModule.forFeature([Device, Reservation]), SeatModule],
   providers: [MqttService, SensorProcessorService],
   exports: [MqttService, SensorProcessorService],
 })

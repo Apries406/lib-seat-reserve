@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { CreditScoreDetail } from './entities/credit-score-detail.entity';
 import { UserService } from './services/user.service';
+import { CreditRecoveryScheduler } from './services/credit-recovery.scheduler';
 import { UserController } from './controllers/user.controller';
 import { WechatModule } from '../wechat/wechat.module';
 
@@ -22,7 +23,7 @@ import { WechatModule } from '../wechat/wechat.module';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, CreditRecoveryScheduler],
   exports: [UserService],
 })
 export class UserModule {}

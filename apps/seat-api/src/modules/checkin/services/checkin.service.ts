@@ -4,6 +4,7 @@ import { SeatService } from '../../seat/services/seat.service';
 import { LocationService } from './location.service';
 import { CheckinMethod, CheckinFailReason, CHECKIN_FAIL_TEXT } from '../enums/checkin.enum';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
+import { UserService, ViolationType } from '../../user/services/user.service';
 
 export interface ICheckinRequest {
   reservationId: string;
@@ -18,6 +19,7 @@ export class CheckinService {
     private readonly reservationService: ReservationService,
     private readonly seatService: SeatService,
     private readonly locationService: LocationService,
+    private readonly userService: UserService,
   ) {}
 
   async checkin(userId: string, request: ICheckinRequest) {
@@ -39,6 +41,12 @@ export class CheckinService {
 
       if (!verification.isValid) {
         throw new BadRequestException(CHECKIN_FAIL_TEXT[CheckinFailReason.LOCATION_TOO_FAR]);
+      }
+
+      if (verification.isRemote) {
+        await this.userService.deductCreditScore(userId, ViolationType.REMOTE_CHECKIN, {
+          reservationId,
+        });
       }
     }
 

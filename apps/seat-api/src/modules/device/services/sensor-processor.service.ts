@@ -1,8 +1,11 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { Redis } from 'ioredis';
+import { Repository } from 'typeorm';
 import { ISensorDataMessage } from '../enums/device.enum';
 import { SeatService } from '../../seat/services/seat.service';
 import { SeatStatus, StatusTrigger } from '../../seat/enums/seat-status.enum';
+import { Reservation, ReservationStatus } from '../../reservation/entities/reservation.entity';
 
 const JUDGE_CONFIG = {
   leave: {
@@ -24,6 +27,8 @@ export class SensorProcessorService {
   constructor(
     private readonly seatService: SeatService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
+    @InjectRepository(Reservation)
+    private readonly reservationRepo: Repository<Reservation>,
   ) {}
 
   async process(deviceId: string, message: ISensorDataMessage): Promise<void> {
@@ -40,29 +45,69 @@ export class SensorProcessorService {
     await this.recordObservation(seat.id, sensor.value);
 
     if (sensor.value) {
+      // 有人
+      if (seat.status === SeatStatus.RESERVED) {
+        await this.tryAutoCheckin(seat.id);
+        return;
+      }
+
       if (seat.status === SeatStatus.MAYBE_LEAVE || seat.status === SeatStatus.TEMP_LEAVE) {
         const shouldReturn = await this.judgeReturn(seat.id);
         if (shouldReturn) {
-          await this.seatService.updateStatus(seat.id, SeatStatus.IN_USE, StatusTrigger.SENSOR_RETURN);
+          await this.seatService.updateStatus(seat.id, SeatStatus.IN_USE, StatusTrigger.SENSOR_RETURN, seat.currentUserId);
         }
       }
     } else {
+      // 无人
       if (seat.status === SeatStatus.IN_USE) {
         const shouldLeave = await this.judgeLeave(seat.id);
         if (shouldLeave) {
-          await this.seatService.updateStatus(seat.id, SeatStatus.MAYBE_LEAVE, StatusTrigger.SENSOR_LEAVE);
+          await this.seatService.updateStatus(seat.id, SeatStatus.MAYBE_LEAVE, StatusTrigger.SENSOR_LEAVE, seat.currentUserId);
+        }
+      }
+
+      if (seat.status === SeatStatus.MAYBE_LEAVE) {
+        const shouldLeave = await this.judgeLeave(seat.id);
+        if (shouldLeave) {
+          await this.seatService.updateStatus(seat.id, SeatStatus.TEMP_LEAVE, StatusTrigger.JUDGE_LEAVE, seat.currentUserId);
         }
       }
     }
   }
 
+  private async tryAutoCheckin(seatId: number): Promise<void> {
+    const reservation = await this.reservationRepo.findOne({
+      where: {
+        seatId,
+        status: ReservationStatus.PENDING,
+      },
+      order: { reservedAt: 'DESC' },
+    });
+
+    if (!reservation) {
+      this.logger.debug(`Seat ${seatId} is RESERVED but no pending reservation found`);
+      return;
+    }
+
+    if (new Date() > reservation.expiresAt) {
+      this.logger.debug(`Reservation ${reservation.id} expired, skipping auto-checkin`);
+      return;
+    }
+
+    reservation.status = ReservationStatus.ACTIVE;
+    reservation.checkedInAt = new Date();
+    await this.reservationRepo.save(reservation);
+    await this.seatService.updateStatus(seatId, SeatStatus.IN_USE, StatusTrigger.CHECKIN, reservation.userId);
+
+    this.logger.log(`Auto-checked-in reservation ${reservation.id} for seat ${seatId}`);
+  }
+
   async recordObservation(seatId: number, isOccupied: boolean): Promise<void> {
     const key = `seat:observations:${seatId}`;
-    const timestamp = Date.now();
+    const ts = Date.now();
 
-    await this.redis.lpush(key, JSON.stringify({ timestamp, isOccupied }));
+    await this.redis.lpush(key, JSON.stringify({ timestamp: ts, isOccupied }));
 
-    const cutoff = timestamp - 10 * 60 * 1000;
     await this.redis.ltrim(key, 0, 200);
     await this.redis.expire(key, 600);
   }
