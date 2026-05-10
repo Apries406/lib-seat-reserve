@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan } from 'typeorm';
+import { Repository, LessThan, In } from 'typeorm';
 import { Reservation, ReservationStatus } from '../entities/reservation.entity';
 import { ReservationLockService, LuaScriptResult } from './reservation-lock.service';
 import { SeatService } from '../../seat/services/seat.service';
@@ -112,9 +112,10 @@ export class ReservationService {
     const reservation = await this.reservationRepo.findOne({
       where: {
         userId,
-        status: ReservationStatus.PENDING,
+        status: In([ReservationStatus.PENDING, ReservationStatus.ACTIVE]),
       },
       relations: ['seat'],
+      order: { createdAt: 'DESC' },
     });
     if (!reservation) return null;
     return this.toResponse(reservation);

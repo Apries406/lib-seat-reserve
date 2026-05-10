@@ -28,14 +28,22 @@ export default function Index() {
 
   const handleSeatSelect = (seat: ISeat) => {
     if (currentReservation?.seatId === seat.id) {
-      navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` });
-    } else if (currentReservation) {
+      if (currentReservation.status === 'PENDING') {
+        navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` });
+      }
+      return;
+    }
+    if (currentReservation) {
+      const isActive = currentReservation.status === 'ACTIVE';
       Taro.showModal({
-        title: '已有预约',
-        content: '您当前已有预约，是否前往签到？',
-        confirmText: '前往签到',
+        title: isActive ? '已有进行中的预约' : '已有预约',
+        content: isActive
+          ? `您当前正在使用 ${currentReservation.seatNumber}，请先结束当前使用`
+          : '您当前已有预约，是否前往签到？',
+        confirmText: isActive ? '知道了' : '前往签到',
+        showCancel: !isActive,
         success: (res) => {
-          if (res.confirm) {
+          if (res.confirm && !isActive) {
             navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` });
           }
         }
@@ -61,19 +69,27 @@ export default function Index() {
         <View className="index__status-card">
           <View className="index__status-header">
             <Text className="index__status-label">当前预约</Text>
-            <Text className="index__status-badge">待签到</Text>
+            <Text className="index__status-badge">
+              {currentReservation.status === 'ACTIVE' ? '使用中' : '待签到'}
+            </Text>
           </View>
           <View className="index__status-info">
             <Text className="index__seat-number">{currentReservation.seatNumber}</Text>
             <View className="index__status-detail">
               <Text className="index__area">{currentReservation.area}</Text>
             </View>
-            <View
-              className="index__status-action"
-              onClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
-            >
-              去签到
-            </View>
+            {currentReservation.status === 'PENDING' ? (
+              <View
+                className="index__status-action"
+                onClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
+              >
+                去签到
+              </View>
+            ) : (
+              <View className="index__status-action index__status-action--active">
+                进行中
+              </View>
+            )}
           </View>
         </View>
       )}

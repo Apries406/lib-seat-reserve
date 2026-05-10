@@ -17,14 +17,18 @@ export default function Current() {
           <View className="current__seat">{currentReservation.seatNumber}</View>
           <View className="current__info">
             <Text className="current__area">{currentReservation.area}</Text>
-            <Text className="current__status">待签到</Text>
+            <Text className="current__status">
+              {currentReservation.status === 'ACTIVE' ? '使用中' : '待签到'}
+            </Text>
           </View>
-          <View
-            className="current__checkin-btn"
-            onClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
-          >
-            <Text className="current__checkin-text">去签到</Text>
-          </View>
+          {currentReservation.status === 'PENDING' && (
+            <View
+              className="current__checkin-btn"
+              onClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
+            >
+              <Text className="current__checkin-text">去签到</Text>
+            </View>
+          )}
         </View>
       ) : (
         <View className="current__empty">

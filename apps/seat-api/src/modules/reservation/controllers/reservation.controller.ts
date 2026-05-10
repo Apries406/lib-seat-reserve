@@ -35,17 +35,6 @@ export class ReservationController {
     return { code: 0, message: '已取消' };
   }
 
-  @Post(':id/checkin')
-  @ApiOperation({ summary: '签到' })
-  async checkin(@Request() req, @Param('id') id: string) {
-    const reservation = await this.reservationService.checkin(id, req.user.userId);
-    return {
-      code: 0,
-      message: '签到成功',
-      data: this.reservationService.toResponse(reservation),
-    };
-  }
-
   @Get('current')
   @ApiOperation({ summary: '获取当前预约' })
   async getCurrent(@Request() req) {

@@ -26,10 +26,11 @@ export default function Checkin() {
     try {
       if (method === CheckinMethod.QR_CODE) {
         const scanRes = await Taro.scanCode({ scanType: ['qrCode'] });
-        await api.checkin(reservationId, { method: 'QR_CODE', qrCode: scanRes.result });
+        await api.checkin({ reservationId, method: 'QR_CODE', qrCode: scanRes.result });
       } else {
         const location = await Taro.getLocation({ type: 'gcj02', isHighAccuracy: true });
-        await api.checkin(reservationId, {
+        await api.checkin({
+          reservationId,
           method: 'LOCATION',
           location: { lat: location.latitude, lng: location.longitude },
         });

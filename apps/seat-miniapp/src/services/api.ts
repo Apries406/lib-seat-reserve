@@ -131,9 +131,9 @@ export const api = {
       method: 'DELETE',
     }),
 
-  checkin: (id: string, data: { method: string; location?: { lat: number; lng: number }; qrCode?: string }) =>
+  checkin: (data: { reservationId: string; method: string; location?: { lat: number; lng: number }; qrCode?: string }) =>
     request<any>({
-      url: `/reservations/${id}/checkin`,
+      url: '/checkin',
       method: 'POST',
       data,
     }),
