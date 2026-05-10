@@ -109,6 +109,7 @@ export class ReservationService {
     reservation.checkedInAt = new Date();
     await this.reservationRepo.save(reservation);
     await this.seatService.updateStatus(reservation.seatId, SeatStatus.IN_USE, StatusTrigger.CHECKIN, userId);
+    await this.lockService.releaseReservation(reservation.seatId, userId);
 
     return reservation;
   }
@@ -194,6 +195,7 @@ export class ReservationService {
       reservedAt: reservation.reservedAt,
       expiresAt: reservation.expiresAt,
       checkedInAt: reservation.checkedInAt,
+      checkedOutAt: reservation.checkedOutAt,
     };
   }
 }

@@ -99,6 +99,8 @@ export class SensorProcessorService {
     await this.reservationRepo.save(reservation);
     await this.seatService.updateStatus(seatId, SeatStatus.IN_USE, StatusTrigger.CHECKIN, reservation.userId);
 
+    await this.redis.del(`seat:lock:${seatId}`, `seat:reserved:${seatId}`, `user:seat:${reservation.userId}`);
+
     this.logger.log(`Auto-checked-in reservation ${reservation.id} for seat ${seatId}`);
   }
 

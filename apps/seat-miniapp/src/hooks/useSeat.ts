@@ -45,7 +45,7 @@ export function useSeat() {
       free: seats.filter((s) => s.status === 'FREE'),
       reserved: seats.filter((s) => s.status === 'RESERVED'),
       inUse: seats.filter((s) => s.status === 'IN_USE'),
-      tempLeave: seats.filter((s) => s.status === 'TEMP_LEAVE'),
+      tempLeave: seats.filter((s) => s.status === 'TEMP_LEAVE' || s.status === 'MAYBE_LEAVE'),
     };
   }, [seats]);
 

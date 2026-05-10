@@ -79,12 +79,9 @@ export const useSeatStore = create<SeatStore>((set, get) => ({
         return state;
       }
 
-      const availabilityDelta =
-        targetSeat.status === SeatStatus.FREE && status !== SeatStatus.FREE
-          ? -1
-          : targetSeat.status !== SeatStatus.FREE && status === SeatStatus.FREE
-            ? 1
-            : 0;
+      const wasFree = targetSeat.status === SeatStatus.FREE;
+      const isFree = status === SeatStatus.FREE;
+      const availabilityDelta = wasFree && !isFree ? -1 : !wasFree && isFree ? 1 : 0;
 
       return {
         seats: state.seats.map((seat) =>

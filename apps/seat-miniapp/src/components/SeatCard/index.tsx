@@ -27,6 +27,7 @@ export const SeatCard = memo<SeatCardProps>(({ seat, selected, isMine, onSelect 
       case 'RESERVED': return 'reserved';
       case 'IN_USE': return 'occupied';
       case 'TEMP_LEAVE': return 'temp-leave';
+      case 'MAYBE_LEAVE': return 'temp-leave';
       default: return '';
     }
   };
