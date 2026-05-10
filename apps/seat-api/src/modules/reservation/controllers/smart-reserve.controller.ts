@@ -44,7 +44,7 @@ export class SmartReserveController {
   @Post()
   @ApiOperation({ summary: '智能预约座位（直接预约）' })
   async smartReserve(@Request() req, @Body() dto: SmartReserveDto) {
-    const result = await this.smartReserveService.smartReserve(req.user.userId, dto);
+    const result = await this.smartReserveService.smartReserve(req.user.userId, dto, req.deviceFingerprint);
     return {
       code: 0,
       message: result.message,
@@ -55,7 +55,7 @@ export class SmartReserveController {
   @Post('preview')
   @ApiOperation({ summary: '预览推荐座位（犹豫期锁定）' })
   async preview(@Request() req, @Body() dto: SmartReserveDto) {
-    const result = await this.smartReserveService.preview(req.user.userId, dto);
+    const result = await this.smartReserveService.preview(req.user.userId, dto, req.deviceFingerprint);
     return {
       code: 0,
       message: result.message || '座位已锁定，请确认',

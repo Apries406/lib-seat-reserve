@@ -1,5 +1,6 @@
 import Taro from '@tarojs/taro';
 import { useUserStore } from '../store/userStore';
+import { getDeviceFingerprint } from '../utils/fingerprint';
 
 export const API_BASE_URL = TARO_APP_API_URL;
 
@@ -43,6 +44,7 @@ export async function request<T = any>(options: RequestOptions): Promise<T> {
 
   const header: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Device-Fingerprint': getDeviceFingerprint(),
   };
 
   const { accessToken } = useUserStore.getState();
@@ -72,11 +74,11 @@ export async function request<T = any>(options: RequestOptions): Promise<T> {
 }
 
 export const api = {
-  login: (code: string) =>
+  login: (code: string, deviceFingerprint?: string) =>
     request<{ accessToken: string; refreshToken: string; user: any }>({
       url: '/user/login',
       method: 'POST',
-      data: { code },
+      data: { code, deviceFingerprint },
     }),
 
   getProfile: () =>

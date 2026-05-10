@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import { useUserStore } from '../store/userStore';
+import { getDeviceFingerprint } from '../utils/fingerprint';
 
 export function useAuth() {
   const { user, isLoggedIn, login, logout, refreshUserInfo } = useUserStore();
@@ -11,7 +12,8 @@ export function useAuth() {
       if (!loginRes.code) {
         throw new Error('获取微信登录凭证失败');
       }
-      await login(loginRes.code);
+      const fingerprint = getDeviceFingerprint();
+      await login(loginRes.code, fingerprint);
     } catch (error: any) {
       Taro.showToast({ title: error.message || '登录失败', icon: 'error' });
       throw error;

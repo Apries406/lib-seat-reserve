@@ -17,6 +17,7 @@ export class JwtAuthGuard implements CanActivate {
     try {
       const payload = jwt.verify(token, secret) as { sub: string; openid: string };
       request.user = { userId: payload.sub, openid: payload.openid };
+      request.deviceFingerprint = request.headers['x-device-fingerprint'] as string | undefined;
       return true;
     } catch {
       throw new UnauthorizedException('无效的认证令牌');

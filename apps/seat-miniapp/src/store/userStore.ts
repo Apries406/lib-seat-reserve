@@ -42,9 +42,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
     set({ accessToken, refreshToken });
   },
 
-  login: async (code: string) => {
+  login: async (code: string, deviceFingerprint?: string) => {
     try {
-      const result = await api.login(code);
+      const result = await api.login(code, deviceFingerprint);
       get().setTokens(result.accessToken, result.refreshToken);
       get().setUser(result.user);
       Taro.showToast({ title: '登录成功', icon: 'success' });

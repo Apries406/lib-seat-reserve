@@ -48,10 +48,15 @@ export class SmartReserveService {
     private readonly userService: UserService,
   ) {}
 
-  async smartReserve(userId: string, preference: ISmartReservePreference) {
+  async smartReserve(userId: string, preference: ISmartReservePreference, deviceFingerprint?: string) {
     const user = await this.userService.findById(userId);
     if (!user.canReserve) {
       throw new BadRequestException('信誉分过低，暂时无法预约座位');
+    }
+
+    const fingerprintValid = await this.userService.verifyDeviceFingerprint(userId, deviceFingerprint);
+    if (!fingerprintValid) {
+      throw new BadRequestException('检测到账号在非常用设备登录，请使用常用设备预约');
     }
 
     const current = await this.reservationService.getCurrent(userId);
@@ -75,10 +80,15 @@ export class SmartReserveService {
     };
   }
 
-  async preview(userId: string, preference: ISmartReservePreference) {
+  async preview(userId: string, preference: ISmartReservePreference, deviceFingerprint?: string) {
     const user = await this.userService.findById(userId);
     if (!user.canReserve) {
       throw new BadRequestException('信誉分过低，暂时无法预约座位');
+    }
+
+    const fingerprintValid = await this.userService.verifyDeviceFingerprint(userId, deviceFingerprint);
+    if (!fingerprintValid) {
+      throw new BadRequestException('检测到账号在非常用设备登录，请使用常用设备预约');
     }
 
     const current = await this.reservationService.getCurrent(userId);

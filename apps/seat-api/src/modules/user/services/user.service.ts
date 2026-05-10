@@ -52,12 +52,13 @@ export class UserService {
     return user;
   }
 
-  async createOrUpdate(openId: string, nickname: string, avatar?: string): Promise<User> {
+  async createOrUpdate(openId: string, nickname: string, avatar?: string, deviceFingerprint?: string): Promise<User> {
     let user = await this.findByOpenId(openId);
-    
+
     if (user) {
       user.nickname = nickname;
       if (avatar) user.avatar = avatar;
+      if (deviceFingerprint) user.deviceFingerprint = deviceFingerprint;
     } else {
       user = this.userRepo.create({
         openId,
@@ -65,10 +66,22 @@ export class UserService {
         avatar,
         creditScore: 100,
         violationCount: 0,
+        deviceFingerprint,
       });
     }
-    
+
     return this.userRepo.save(user);
+  }
+
+  async verifyDeviceFingerprint(userId: string, fingerprint?: string): Promise<boolean> {
+    const user = await this.findById(userId);
+    if (!user.deviceFingerprint) {
+      return true;
+    }
+    if (!fingerprint) {
+      return false;
+    }
+    return user.deviceFingerprint === fingerprint;
   }
 
   async deductCreditScore(

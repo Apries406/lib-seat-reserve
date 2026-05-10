@@ -22,7 +22,7 @@ export class UserController {
 
     const session = await this.wechatService.code2Session(code);
 
-    const user = await this.userService.createOrUpdate(session.openid, '微信用户');
+    const user = await this.userService.createOrUpdate(session.openid, '微信用户', undefined, loginDto.deviceFingerprint);
 
     const payload = { sub: user.id, openid: user.openId };
     const accessToken = this.jwtService.sign(payload);
