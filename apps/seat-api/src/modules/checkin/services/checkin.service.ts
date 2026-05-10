@@ -53,7 +53,13 @@ export class CheckinService {
 
     const seat = await this.seatService.findById(reservation.seatId);
 
-    if (method === CheckinMethod.LOCATION && location) {
+    if (method === CheckinMethod.LOCATION) {
+      if (!location || location.lat == null || location.lng == null) {
+        throw new BadRequestException('位置信息不完整');
+      }
+      if (seat.latitude == null || seat.longitude == null) {
+        throw new BadRequestException('该座位未设置位置信息');
+      }
       const verification = await this.locationService.verifyLocation(
         userId,
         { latitude: seat.latitude, longitude: seat.longitude },
@@ -99,19 +105,24 @@ export class CheckinService {
 
     const myReservation = await this.reservationService.getCurrent(userId);
     const isMySeat = myReservation && myReservation.seatId === seat.id;
+    const hasOtherReservation = myReservation && myReservation.seatId !== seat.id;
 
     let canReserve = false;
     let message = '';
 
-    switch (seat.status) {
-      case SeatStatus.FREE:
-        canReserve = !isMySeat;
-        message = isMySeat ? '您已预约此座位，请去签到' : '座位空闲，可以预约';
-        break;
-      case SeatStatus.RESERVED:
-        canReserve = false;
-        message = isMySeat ? '您已预约此座位，请去签到' : '该座位已被预约';
-        break;
+    if (hasOtherReservation) {
+      canReserve = false;
+      message = '您已有进行中的预约，无法预约其他座位';
+    } else {
+      switch (seat.status) {
+        case SeatStatus.FREE:
+          canReserve = !isMySeat;
+          message = isMySeat ? '您已预约此座位，请去签到' : '座位空闲，可以预约';
+          break;
+        case SeatStatus.RESERVED:
+          canReserve = false;
+          message = isMySeat ? '您已预约此座位，请去签到' : '该座位已被预约';
+          break;
       case SeatStatus.IN_USE:
         canReserve = false;
         message = isMySeat ? '您正在使用此座位' : '该座位正在使用中';
@@ -131,6 +142,7 @@ export class CheckinService {
       default:
         canReserve = false;
         message = '该座位暂不可用';
+      }
     }
 
     return {

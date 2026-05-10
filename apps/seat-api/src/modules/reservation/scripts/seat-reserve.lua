@@ -1,4 +1,4 @@
--- 原子性座位预约脚本
+-- 原子性座位预约脚本（支持同用户重入）
 -- KEYS[1] = seat:lock:{seatId}
 -- KEYS[2] = seat:reserved:{seatId}
 -- KEYS[3] = user:seat:{userId}
@@ -7,17 +7,17 @@
 -- ARGV[3] = lockTTL (秒)
 
 local locked = redis.call("GET", KEYS[1])
-if locked then
+if locked and locked ~= ARGV[1] then
   return -1
 end
 
 local reserved = redis.call("GET", KEYS[2])
-if reserved then
+if reserved and reserved ~= ARGV[1] then
   return -2
 end
 
 local userSeat = redis.call("GET", KEYS[3])
-if userSeat then
+if userSeat and userSeat ~= KEYS[2] then
   return -3
 end
 

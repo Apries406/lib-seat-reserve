@@ -78,7 +78,9 @@ export class LocationService {
   private async getRemainingRemoteCheckins(userId: string): Promise<number> {
     const key = `checkin:remote:${userId}`;
     const count = await this.redis.get(key);
-    return LOCATION_CONFIG.remoteCheckinLimit - (parseInt(count) || 0);
+    const parsed = parseInt(count || '0', 10);
+    const validCount = Number.isNaN(parsed) ? 0 : parsed;
+    return Math.max(0, LOCATION_CONFIG.remoteCheckinLimit - validCount);
   }
 
   private async recordRemoteCheckin(userId: string): Promise<void> {

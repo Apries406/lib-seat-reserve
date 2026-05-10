@@ -52,6 +52,15 @@ describe('CheckinService', () => {
 
   const mockSeatService = {
     findById: jest.fn(),
+    toResponse: jest.fn().mockImplementation((seat) => ({
+      id: seat.id,
+      area: seat.area,
+      seatNumber: seat.seatNumber,
+      status: seat.status,
+      attributes: seat.attributes,
+      reservedUntil: seat.reservedUntil,
+      currentUserId: seat.currentUserId,
+    })),
   };
 
   const mockLocationService = {
@@ -64,8 +73,9 @@ describe('CheckinService', () => {
 
   const mockQrCodeService = {
     verifySeatQrToken: jest.fn().mockImplementation((token: string) => {
-      if (token.startsWith('seat:1:')) {
-        return { valid: true, seatId: 1 };
+      const match = token.match(/^seat:(\d+):/);
+      if (match) {
+        return { valid: true, seatId: Number(match[1]) };
       }
       return { valid: false, reason: '二维码无效' };
     }),
@@ -170,6 +180,75 @@ describe('CheckinService', () => {
           location: { lat: 31.0, lng: 105.0 },
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw if location is missing for LOCATION method', async () => {
+      mockReservationService.getCurrent.mockResolvedValue(mockReservation);
+      mockSeatService.findById.mockResolvedValue(mockSeat);
+
+      await expect(
+        service.checkin('user-123', {
+          reservationId: 'reservation-uuid-1',
+          method: CheckinMethod.LOCATION,
+        }),
+      ).rejects.toThrow('位置信息不完整');
+    });
+
+    it('should throw if seat has no coordinates for LOCATION method', async () => {
+      mockReservationService.getCurrent.mockResolvedValue(mockReservation);
+      mockSeatService.findById.mockResolvedValue({ ...mockSeat, latitude: null, longitude: null });
+
+      await expect(
+        service.checkin('user-123', {
+          reservationId: 'reservation-uuid-1',
+          method: CheckinMethod.LOCATION,
+          location: { lat: 30.123, lng: 104.456 },
+        }),
+      ).rejects.toThrow('该座位未设置位置信息');
+    });
+  });
+
+  describe('scan', () => {
+    it('should return FREE seat info', async () => {
+      mockSeatService.findById.mockResolvedValue({ ...mockSeat, status: SeatStatus.FREE });
+      mockReservationService.getCurrent.mockResolvedValue(null);
+
+      const result = await service.scan('user-123', 'seat:1:mocksignature');
+      expect(result.canReserve).toBe(true);
+      expect(result.message).toBe('座位空闲，可以预约');
+      expect(result.myReservation).toBeNull();
+    });
+
+    it('should return my reservation for FREE seat', async () => {
+      mockSeatService.findById.mockResolvedValue({ ...mockSeat, status: SeatStatus.FREE });
+      mockReservationService.getCurrent.mockResolvedValue(mockReservation);
+
+      const result = await service.scan('user-123', 'seat:1:mocksignature');
+      expect(result.canReserve).toBe(false);
+      expect(result.message).toBe('您已预约此座位，请去签到');
+      expect(result.myReservation).not.toBeNull();
+    });
+
+    it('should block reservation if user has other reservation', async () => {
+      mockSeatService.findById.mockResolvedValue({ ...mockSeat, status: SeatStatus.FREE, id: 2 });
+      mockReservationService.getCurrent.mockResolvedValue({ ...mockReservation, seatId: 1 });
+
+      const result = await service.scan('user-123', 'seat:2:mocksignature');
+      expect(result.canReserve).toBe(false);
+      expect(result.message).toBe('您已有进行中的预约，无法预约其他座位');
+    });
+
+    it('should return occupied status for IN_USE seat', async () => {
+      mockSeatService.findById.mockResolvedValue({ ...mockSeat, status: SeatStatus.IN_USE });
+      mockReservationService.getCurrent.mockResolvedValue(null);
+
+      const result = await service.scan('user-123', 'seat:1:mocksignature');
+      expect(result.canReserve).toBe(false);
+      expect(result.message).toBe('该座位正在使用中');
+    });
+
+    it('should throw if QR token is invalid', async () => {
+      await expect(service.scan('user-123', 'INVALID')).rejects.toThrow(BadRequestException);
     });
   });
 });

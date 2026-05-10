@@ -51,27 +51,42 @@ export class TempLeaveScheduler implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleTempLeaveTimeout(seatId: number, userId: string | null) {
-    await this.seatService.updateStatus(seatId, SeatStatus.FREE, StatusTrigger.TIMEOUT);
+    let reservation: Reservation | null = null;
 
-    if (userId) {
-      const reservation = await this.reservationRepo.findOne({
-        where: {
-          userId,
-          seatId,
-          status: ReservationStatus.ACTIVE,
-        },
-        order: { checkedInAt: 'DESC' },
-      });
+    try {
+      if (userId) {
+        reservation = await this.reservationRepo.findOne({
+          where: {
+            userId,
+            seatId,
+            status: ReservationStatus.ACTIVE,
+          },
+          order: { checkedInAt: 'DESC' },
+        });
 
-      if (reservation) {
-        reservation.status = ReservationStatus.COMPLETED;
-        reservation.checkedOutAt = new Date();
-        await this.reservationRepo.save(reservation);
+        if (reservation) {
+          reservation.status = ReservationStatus.COMPLETED;
+          reservation.checkedOutAt = new Date();
+          await this.reservationRepo.save(reservation);
+        }
+
+        await this.userService.deductCreditScore(userId, ViolationType.LONG_LEAVE, {
+          reservationId: reservation?.id,
+        });
       }
 
-      await this.userService.deductCreditScore(userId, ViolationType.LONG_LEAVE, {
-        reservationId: reservation?.id,
-      });
+      await this.seatService.updateStatus(seatId, SeatStatus.FREE, StatusTrigger.TIMEOUT);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'unknown error';
+      this.logger.error(`Failed to handle temp-leave timeout for seat ${seatId}: ${message}`);
+
+      if (reservation && reservation.status === ReservationStatus.COMPLETED) {
+        reservation.status = ReservationStatus.ACTIVE;
+        reservation.checkedOutAt = null;
+        await this.reservationRepo.save(reservation).catch(() => {
+          this.logger.error(`Failed to rollback reservation ${reservation!.id} after temp-leave timeout failure`);
+        });
+      }
     }
   }
 }

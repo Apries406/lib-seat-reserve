@@ -59,8 +59,16 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     try {
       const payload = JSON.parse(message.toString());
       const topicParts = topic.split('/');
+      if (topicParts.length < 3) {
+        this.logger.warn(`Invalid topic format: ${topic}`);
+        return;
+      }
       const deviceId = topicParts[1];
       const messageType = topicParts[2];
+      if (!deviceId) {
+        this.logger.warn(`Missing deviceId in topic: ${topic}`);
+        return;
+      }
 
       switch (messageType) {
         case 'sensor':

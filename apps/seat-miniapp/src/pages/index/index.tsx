@@ -23,7 +23,7 @@ export default function Index() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [previewCountdown, setPreviewCountdown] = useState(0);
-  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const previewSeatRef = useRef<any>(null);
 
   useDidShow(() => {

@@ -47,8 +47,8 @@ export class JudgeScheduler implements OnModuleInit, OnModuleDestroy {
       });
 
       for (const seat of expiredSeats) {
-        await this.judgeLockService.unlock(seat.id);
         await this.seatService.releaseSeat(seat.id, StatusTrigger.TIMEOUT);
+        await this.judgeLockService.unlock(seat.id);
         this.logger.log(`Released expired IN_JUDGE seat ${seat.id}`);
       }
     } catch (error) {

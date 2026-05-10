@@ -125,15 +125,15 @@ export class SensorProcessorService {
       return;
     }
 
-    reservation.status = ReservationStatus.COMPLETED;
-    reservation.checkedOutAt = new Date();
-    await this.reservationRepo.save(reservation);
-
     await this.userService.deductCreditScore(reservation.userId, ViolationType.CHECKIN_NO_PERSON, {
       reservationId: reservation.id,
     });
 
     await this.seatService.releaseSeat(seatId, StatusTrigger.SENSOR_LEAVE);
+
+    reservation.status = ReservationStatus.COMPLETED;
+    reservation.checkedOutAt = new Date();
+    await this.reservationRepo.save(reservation);
 
     this.logger.log(`Detected checkin-no-person for reservation ${reservation.id}, seat ${seatId}`);
   }

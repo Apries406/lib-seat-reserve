@@ -5,7 +5,7 @@ import { SeatService } from './seat.service';
 import { Seat } from '../entities/seat.entity';
 import { SeatStatusLog } from '../entities/seat-status-log.entity';
 import { SeatStatus, StatusTrigger } from '../enums/seat-status.enum';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { SeatGateway } from '../../websocket/seat.gateway';
 
 const mockSeat: Seat = {
@@ -184,6 +184,13 @@ describe('SeatService', () => {
       expect(result.currentUserId).toBe('user-123');
       expect(result.reservedUntil).toBe(expiresAt);
       expect(mockSeatGateway.emitSeatStatusChange).toHaveBeenCalledWith(1, SeatStatus.RESERVED);
+    });
+
+    it('should throw if seat is not FREE', async () => {
+      const occupiedSeat = { ...mockSeat, status: SeatStatus.IN_USE };
+      mockSeatRepo.findOne.mockResolvedValue(occupiedSeat);
+
+      await expect(service.reserveSeat(1, 'user-123', new Date())).rejects.toThrow(BadRequestException);
     });
   });
 
