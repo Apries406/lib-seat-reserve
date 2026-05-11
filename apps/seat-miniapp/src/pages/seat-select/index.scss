@@ -1,14 +1,16 @@
 @import '../../styles/variables.scss';
 
-.index {
+.seat-select {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: $gray-50;
 
   &__status-card {
-    margin: 24px 32px;
+    margin: 24px 32px 16px;
     background: linear-gradient(135deg, #7B8AFF 0%, $primary 50%, $primary-dark 100%);
     border-radius: $radius-lg;
-    padding: 36px;
+    padding: 32px;
     color: #fff;
     box-shadow: 0 16px 48px rgba($primary, 0.25);
   }
@@ -17,7 +19,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
 
   &__status-label {
@@ -36,11 +38,11 @@
   &__status-info {
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
   }
 
   &__seat-number {
-    font-size: 64px;
+    font-size: 56px;
     font-weight: 700;
     letter-spacing: -2px;
   }
@@ -55,7 +57,7 @@
   }
 
   &__status-action {
-    padding: 16px 36px;
+    padding: 14px 32px;
     background: rgba(255, 255, 255, 0.22);
     border-radius: $radius-md;
     font-size: 26px;
@@ -65,7 +67,7 @@
   &__area-tabs {
     display: flex;
     white-space: nowrap;
-    padding: 24px 32px;
+    padding: 16px 32px;
     background: #fff;
   }
 
@@ -73,8 +75,8 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 36px;
-    margin-right: 20px;
+    padding: 18px 32px;
+    margin-right: 16px;
     border-radius: $radius-md;
     background: $gray-100;
 
@@ -100,7 +102,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 32px;
+    padding: 16px 32px;
     background: #fff;
     border-bottom: 1px solid $gray-200;
   }
@@ -130,14 +132,15 @@
   }
 
   &__seat-grid {
-    height: calc(100vh - 500px);
+    flex: 1;
+    overflow: hidden;
   }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 20px;
-    padding: 24px 32px;
+    padding: 24px 32px 160px;
   }
 
   &__reserve-btn {
@@ -145,15 +148,16 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 32px;
+    padding: 24px 32px calc(24px + env(safe-area-inset-bottom));
     background: linear-gradient(180deg, transparent 0%, #fff 20%);
+    z-index: 10;
   }
 
   &__reserve-text {
     display: block;
     width: 100%;
-    height: 104px;
-    line-height: 104px;
+    height: 96px;
+    line-height: 96px;
     background: $primary;
     color: #fff;
     border-radius: $radius-md;
