@@ -3,6 +3,10 @@
 #include <WiFi.h>
 #include <esp_system.h>
 #include <time.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <qrcode.h>
 
 #include "app_config.h"
 
@@ -10,6 +14,7 @@ namespace {
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
+Adafruit_SSD1306 display(AppConfig::OLED_WIDTH, AppConfig::OLED_HEIGHT, &Wire, -1);
 
 bool pirWarmupFinished = false;
 bool hasPublishedSensorState = false;
@@ -21,6 +26,14 @@ unsigned long lastStatusReportAtMs = 0;
 unsigned long lastWifiReconnectAttemptAtMs = 0;
 unsigned long lastMqttReconnectAttemptAtMs = 0;
 
+// Display state
+String displaySeatNumber = "";
+String displayStatus = "FREE";
+String displayQrToken = "";
+unsigned long displayQrExpiresIn = 0;
+unsigned long displayUpdatedAtMs = 0;
+bool displayNeedsRefresh = true;
+
 String sensorTopic() {
   return String("device/") + AppConfig::DEVICE_ID + "/sensor";
 }
@@ -31,6 +44,10 @@ String statusTopic() {
 
 String commandTopic() {
   return String("server/device/") + AppConfig::DEVICE_ID + "/command";
+}
+
+String displayTopic() {
+  return String("server/device/") + AppConfig::DEVICE_ID + "/display";
 }
 
 String extractCommandValue(const String& payload) {
@@ -57,6 +74,23 @@ String extractCommandValue(const String& payload) {
   return payload.substring(firstQuoteIndex + 1, secondQuoteIndex);
 }
 
+String extractJsonString(const String& payload, const String& key) {
+  const String searchKey = "\"" + key + "\"";
+  const int keyIndex = payload.indexOf(searchKey);
+  if (keyIndex < 0) return "";
+
+  const int colonIndex = payload.indexOf(':', keyIndex + searchKey.length());
+  if (colonIndex < 0) return "";
+
+  const int firstQuote = payload.indexOf('"', colonIndex);
+  if (firstQuote < 0) return "";
+
+  const int secondQuote = payload.indexOf('"', firstQuote + 1);
+  if (secondQuote < 0) return "";
+
+  return payload.substring(firstQuote + 1, secondQuote);
+}
+
 long wifiStrength() {
   return WiFi.status() == WL_CONNECTED ? WiFi.RSSI() : 0;
 }
@@ -72,8 +106,6 @@ unsigned long long currentTimestampMs() {
   if (now > 1700000000) {
     return static_cast<unsigned long long>(now) * 1000ULL;
   }
-
-  // 未拿到 NTP 时间时退化为开机毫秒值，避免 payload 缺失 timestamp。
   return static_cast<unsigned long long>(millis());
 }
 
@@ -107,7 +139,6 @@ void syncClockIfNeeded() {
   if (timeInitDone || WiFi.status() != WL_CONNECTED) {
     return;
   }
-
   configTime(0, 0, "pool.ntp.org", "ntp.aliyun.com", "time.cloudflare.com");
   timeInitDone = true;
 }
@@ -199,6 +230,113 @@ void handleCommand(const String& topic, const String& payload) {
   }
 }
 
+// OLED display functions
+bool initDisplay() {
+  Wire.begin(AppConfig::OLED_SDA_PIN, AppConfig::OLED_SCL_PIN);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, AppConfig::OLED_ADDR)) {
+    Serial.println("[oled] SSD1306 init failed");
+    return false;
+  }
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.display();
+  Serial.println("[oled] SSD1306 initialized");
+  return true;
+}
+
+void drawQrCode(const String& text, uint8_t xOffset, uint8_t yOffset, uint8_t scale) {
+  QRCode qrcode;
+  uint8_t qrcodeBytes[qrcode_getBufferSize(1)];
+
+  // Version 1 = 21x21 modules, fits well on 128x64
+  const int err = qrcode_initText(&qrcode, qrcodeBytes, 1, ECC_LOW, text.c_str());
+  if (err != 0) {
+    Serial.printf("[oled] QR init failed: %d\n", err);
+    return;
+  }
+
+  for (uint8_t y = 0; y < qrcode.size; y++) {
+    for (uint8_t x = 0; x < qrcode.size; x++) {
+      if (qrcode_getModule(&qrcode, x, y)) {
+        display.fillRect(xOffset + x * scale, yOffset + y * scale, scale, scale, SSD1306_WHITE);
+      }
+    }
+  }
+}
+
+void refreshDisplay() {
+  if (!displayNeedsRefresh) {
+    return;
+  }
+  displayNeedsRefresh = false;
+
+  display.clearDisplay();
+
+  // Top bar: seat number + status
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print("SEAT ");
+  display.print(displaySeatNumber.length() > 0 ? displaySeatNumber.c_str() : "--");
+
+  // Status on the right side of top bar
+  display.setCursor(80, 0);
+  if (displayStatus == "FREE") {
+    display.print("FREE");
+  } else if (displayStatus == "RESERVED") {
+    display.print("RSRV");
+  } else if (displayStatus == "IN_USE") {
+    display.print("USE");
+  } else if (displayStatus == "TEMP_LEAVE") {
+    display.print("LEAVE");
+  } else {
+    display.print(displayStatus.c_str());
+  }
+
+  display.drawLine(0, 10, 127, 10, SSD1306_WHITE);
+
+  if (displayQrToken.length() > 0 && (displayStatus == "RESERVED" || displayStatus == "IN_USE")) {
+    // Draw QR code in the center
+    const uint8_t qrScale = 2;
+    const uint8_t qrSize = 21 * qrScale;  // Version 1 = 21 modules
+    const uint8_t qrX = (AppConfig::OLED_WIDTH - qrSize) / 2;
+    const uint8_t qrY = 14 + (AppConfig::OLED_HEIGHT - 14 - qrSize) / 2;
+    drawQrCode(displayQrToken, qrX, qrY, qrScale);
+  } else {
+    // Show idle icon/text
+    display.setTextSize(2);
+    display.setCursor(20, 28);
+    if (displayStatus == "FREE") {
+      display.print("FREE");
+    } else {
+      display.print(displayStatus.c_str());
+    }
+  }
+
+  display.display();
+}
+
+void handleDisplay(const String& topic, const String& payload) {
+  if (topic != displayTopic()) {
+    return;
+  }
+
+  Serial.printf("[mqtt] display => %s\n", payload.c_str());
+
+  const String seatNumber = extractJsonString(payload, "seatNumber");
+  const String status = extractJsonString(payload, "status");
+  const String qrToken = extractJsonString(payload, "qrToken");
+
+  if (seatNumber.length() > 0) {
+    displaySeatNumber = seatNumber;
+  }
+  if (status.length() > 0) {
+    displayStatus = status;
+  }
+  displayQrToken = qrToken;
+  displayUpdatedAtMs = millis();
+  displayNeedsRefresh = true;
+}
+
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String body;
   body.reserve(length);
@@ -207,6 +345,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   }
 
   handleCommand(String(topic), body);
+  handleDisplay(String(topic), body);
 }
 
 void ensureMqttConnected() {
@@ -241,7 +380,8 @@ void ensureMqttConnected() {
   }
 
   mqttClient.subscribe(commandTopic().c_str(), 1);
-  Serial.printf("[mqtt] connected, subscribed %s\n", commandTopic().c_str());
+  mqttClient.subscribe(displayTopic().c_str(), 1);
+  Serial.printf("[mqtt] connected, subscribed %s and %s\n", commandTopic().c_str(), displayTopic().c_str());
 
   publishOnlineStatus(true);
 }
@@ -290,6 +430,8 @@ void setup() {
   mqttClient.setCallback(mqttCallback);
   mqttClient.setKeepAlive(30);
 
+  initDisplay();
+
   Serial.printf("[boot] deviceId=%s pirPin=%u warmup=%lu ms\n", AppConfig::DEVICE_ID, AppConfig::PIR_PIN, AppConfig::PIR_WARMUP_MS);
 }
 
@@ -304,4 +446,5 @@ void loop() {
   }
 
   samplePirAndPublishIfChanged();
+  refreshDisplay();
 }

@@ -32,6 +32,13 @@ constexpr unsigned long PIR_SAMPLE_INTERVAL_MS = 250;
 // 先给出一个保守固定置信度，后续可按安装位置或多传感器融合调整。
 constexpr float INFRARED_CONFIDENCE = 0.95F;
 
+// SSD1306 OLED I2C 配置
+constexpr uint8_t OLED_SDA_PIN = 21;
+constexpr uint8_t OLED_SCL_PIN = 22;
+constexpr uint8_t OLED_ADDR = 0x3C;
+constexpr uint8_t OLED_WIDTH = 128;
+constexpr uint8_t OLED_HEIGHT = 64;
+
 }  // namespace AppConfig
 
 #endif
