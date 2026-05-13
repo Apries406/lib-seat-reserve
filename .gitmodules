@@ -1,0 +1,3 @@
+[submodule "docs"]
+	path = docs
+	url = https://github.com/Apries406/lib-seat-reverse-thesis.git
