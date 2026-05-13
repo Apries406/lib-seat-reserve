@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <esp_system.h>
 #include <time.h>
 #include <Wire.h>
@@ -12,7 +13,7 @@
 
 namespace {
 
-WiFiClient wifiClient;
+WiFiClientSecure wifiClient;
 PubSubClient mqttClient(wifiClient);
 Adafruit_SSD1306 display(AppConfig::OLED_WIDTH, AppConfig::OLED_HEIGHT, &Wire, -1);
 
@@ -426,6 +427,7 @@ void setup() {
   bootAtMs = millis();
   pinMode(AppConfig::PIR_PIN, INPUT);
 
+  wifiClient.setInsecure(); // 测试阶段跳过证书验证（HiveMQ Cloud）
   mqttClient.setServer(AppConfig::MQTT_HOST, AppConfig::MQTT_PORT);
   mqttClient.setCallback(mqttCallback);
   mqttClient.setKeepAlive(30);

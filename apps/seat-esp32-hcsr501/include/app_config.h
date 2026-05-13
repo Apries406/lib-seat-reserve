@@ -6,14 +6,18 @@
 // 修改这一处配置即可适配真实环境；占位值用于说明字段含义。
 namespace AppConfig {
 
+// ========== 1. WiFi 配置 ==========
 constexpr char WIFI_SSID[] = "YOUR_WIFI_SSID";
 constexpr char WIFI_PASSWORD[] = "YOUR_WIFI_PASSWORD";
 
-constexpr char DEVICE_ID[] = "seat-esp32-hcsr501-001";
+// ========== 2. 设备标识 ==========
+// 必须与数据库 seats 表里的 deviceId 一致，例如 DEV-0001 ~ DEV-0500
+constexpr char DEVICE_ID[] = "DEV-0001";
 
-// PubSubClient 使用 host + port，因此这里拆开配置，而不是 mqtt:// URL。
-constexpr char MQTT_HOST[] = "192.168.1.10";
-constexpr uint16_t MQTT_PORT = 1883;
+// ========== 3. MQTT 配置 ==========
+// HiveMQ Cloud 免费版强制 TLS，端口 8883
+constexpr char MQTT_HOST[] = "e1ee63562b6a49748af5646f23367179.s1.eu.hivemq.cloud";
+constexpr uint16_t MQTT_PORT = 8883;
 constexpr char MQTT_USERNAME[] = "";
 constexpr char MQTT_PASSWORD[] = "";
 
