@@ -8,7 +8,7 @@
 
 === 测试环境配置
 
-硬件测试环境包括ESP32-38Pin-CP2102开发板、HC-SR501红外传感器和Intel i7测试电脑。软件环境包括Node.js v20、MySQL v8.0、Redis v7、Chrome浏览器、微信开发者工具和MQTTX客户端。网络环境为192.168.1.0/24局域网，后端本地部署。
+硬件测试环境包括ESP32-38Pin-CP2102开发板、HC-SR501红外传感器和Apple M4 Pro测试电脑（48GB RAM，macOS 26.4）。软件环境包括Node.js v20、MySQL v8.0、Redis v7、Chrome浏览器、微信开发者工具和MQTTX客户端。网络环境为192.168.1.0/24局域网，后端本地部署。
 
 === 测试方法
 
