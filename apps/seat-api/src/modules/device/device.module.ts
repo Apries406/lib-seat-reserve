@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Device } from './entities/device.entity';
 import { MqttService } from './services/mqtt.service';
@@ -8,7 +8,7 @@ import { UserModule } from '../user/user.module';
 import { Reservation } from '../reservation/entities/reservation.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Device, Reservation]), SeatModule, UserModule],
+  imports: [TypeOrmModule.forFeature([Device, Reservation]), forwardRef(() => SeatModule), UserModule],
   providers: [MqttService, SensorProcessorService],
   exports: [MqttService, SensorProcessorService],
 })

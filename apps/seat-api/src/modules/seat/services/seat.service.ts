@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { Seat } from '../entities/seat.entity';
 import { SeatStatusLog } from '../entities/seat-status-log.entity';
 import { SeatStatus, StatusTrigger } from '../enums/seat-status.enum';
 import { SeatGateway } from '../../websocket/seat.gateway';
+import { MqttService } from '../../device/services/mqtt.service';
+import { QrCodeService } from './qr-code.service';
 
 @Injectable()
 export class SeatService {
@@ -14,6 +16,9 @@ export class SeatService {
     @InjectRepository(SeatStatusLog)
     private readonly logRepo: Repository<SeatStatusLog>,
     private readonly seatGateway: SeatGateway,
+    @Inject(forwardRef(() => MqttService))
+    private readonly mqttService: MqttService,
+    private readonly qrCodeService: QrCodeService,
   ) {}
 
   async findAll(query?: { area?: string; status?: SeatStatus; attributes?: Partial<{ hasOutlet?: boolean; isQuiet?: boolean; nearWindow?: boolean }> }): Promise<Seat[]> {
@@ -118,6 +123,7 @@ export class SeatService {
     });
 
     this.seatGateway.emitSeatStatusChange(seatId, newStatus);
+    this.publishDisplay(seat);
 
     return seat;
   }
@@ -144,6 +150,7 @@ export class SeatService {
     });
 
     this.seatGateway.emitSeatStatusChange(seatId, SeatStatus.RESERVED);
+    this.publishDisplay(seat);
 
     return seat;
   }
@@ -168,8 +175,27 @@ export class SeatService {
     });
 
     this.seatGateway.emitSeatStatusChange(seatId, SeatStatus.FREE);
+    this.publishDisplay(seat);
 
     return seat;
+  }
+
+  private publishDisplay(seat: Seat) {
+    if (!seat.deviceId) {
+      return;
+    }
+    const qrToken = seat.status === SeatStatus.RESERVED || seat.status === SeatStatus.IN_USE
+      ? this.qrCodeService.generateSeatQrToken(seat.id)
+      : undefined;
+    const expiresIn = seat.reservedUntil
+      ? Math.max(0, Math.floor((seat.reservedUntil.getTime() - Date.now()) / 1000))
+      : undefined;
+    this.mqttService.publishDisplay(seat.deviceId, {
+      status: seat.status,
+      seatNumber: seat.seatNumber,
+      qrToken,
+      expiresIn,
+    });
   }
 
   toResponse(seat: Seat) {

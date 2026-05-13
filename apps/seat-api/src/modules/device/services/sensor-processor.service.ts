@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Redis } from 'ioredis';
 import { Repository } from 'typeorm';
@@ -26,6 +26,7 @@ export class SensorProcessorService {
   private readonly logger = new Logger(SensorProcessorService.name);
 
   constructor(
+    @Inject(forwardRef(() => SeatService))
     private readonly seatService: SeatService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     @InjectRepository(Reservation)

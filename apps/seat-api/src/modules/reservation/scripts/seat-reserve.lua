@@ -16,6 +16,11 @@ if reserved and reserved ~= ARGV[1] then
   return -2
 end
 
+-- 若 seat:reserved 已存在且 seat:lock 已过期，说明已有有效预约，禁止重入
+if reserved and reserved == ARGV[1] and not locked then
+  return -2
+end
+
 local userSeat = redis.call("GET", KEYS[3])
 if userSeat and userSeat ~= KEYS[2] then
   return -3

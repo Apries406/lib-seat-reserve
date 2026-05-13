@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as mqtt from 'mqtt';
 import { MqttClient } from 'mqtt';
 import { SensorProcessorService } from './sensor-processor.service';
-import { ISensorDataMessage, IDeviceStatusMessage, IDeviceCommand, DeviceCommandType } from '../enums/device.enum';
+import { ISensorDataMessage, IDeviceStatusMessage, IDeviceCommand, DeviceCommandType, IDeviceDisplayPayload } from '../enums/device.enum';
 
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
@@ -91,5 +91,15 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     const topic = `server/device/${deviceId}/command`;
     this.client.publish(topic, JSON.stringify(command), { qos: 1 });
     this.logger.log(`Sent command ${command.command} to ${deviceId}`);
+  }
+
+  publishDisplay(deviceId: string, payload: IDeviceDisplayPayload) {
+    if (!this.client?.connected) {
+      this.logger.warn('MQTT not connected, cannot send display data');
+      return;
+    }
+    const topic = `server/device/${deviceId}/display`;
+    this.client.publish(topic, JSON.stringify(payload), { qos: 1 });
+    this.logger.log(`Sent display data to ${deviceId}: ${payload.status}`);
   }
 }

@@ -108,9 +108,10 @@ export class SmartReserveService {
     }
 
     await this.seatService.updateStatus(candidates.seat.id, SeatStatus.IN_JUDGE, StatusTrigger.RESERVE, userId);
+    const lockedSeat = await this.seatService.findById(candidates.seat.id);
 
     return {
-      seat: this.seatService.toResponse(candidates.seat),
+      seat: this.seatService.toResponse(lockedSeat),
       adjusted: candidates.adjusted,
       message: candidates.message,
       expiresIn: 60,
@@ -129,12 +130,15 @@ export class SmartReserveService {
     }
 
     await this.judgeLockService.unlock(seatId);
+    await this.seatService.updateStatus(seatId, SeatStatus.FREE, StatusTrigger.RELEASE);
+    await this.lockService.releaseReservation(seatId, userId);
 
     const reservation = await this.reservationService.create(userId, seatId);
+    const reservedSeat = await this.seatService.findById(seatId);
 
     return {
       reservation: this.reservationService.toResponse(reservation),
-      seat: this.seatService.toResponse(seat),
+      seat: this.seatService.toResponse(reservedSeat),
       message: '预约成功',
     };
   }
