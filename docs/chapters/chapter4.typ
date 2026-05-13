@@ -386,71 +386,9 @@ async recoverCreditScore() {
 
 === 系统主要界面展示
 
-系统前端采用Taro框架开发微信小程序，主要界面按照用户操作流程设计，涵盖登录、预约、签到、历史查询和个人中心等核心环节。
+系统前端采用Taro框架开发微信小程序，主要界面按照用户操作流程设计，涵盖登录、首页/智能预约、预约确认、签到、历史查询和个人中心等核心环节。各界面具体展示及操作流程验证见第五章功能测试中的系统操作流程测试。
 
-*（1）登录界面。* 用户首次进入小程序时，需授权微信登录。系统通过`wx.login`获取code，后端换取openid并完成用户注册或查询，生成JWT令牌返回前端。登录界面如 @fig:ui-login 所示。
-
-#figure(
-  image("../figures/examples/login.png", width: 35%),
-  caption: "小程序登录界面",
-) <fig:ui-login>
-
-*（2）首页与智能预约。* 登录后进入首页，顶部展示当前进行中的预约及签到入口，中部为智能预约偏好选择区，用户可选择靠窗、有插座、安静区等偏好，并设置楼层偏好。开启「接受调剂」后，系统在无严格匹配座位时将自动放宽条件。首页界面如 @fig:ui-home 所示，智能预约偏好选择如 @fig:ui-smart 所示。
-
-#figure(
-  image("../figures/examples/home-reversed.png", width: 35%),
-  caption: "小程序首页",
-) <fig:ui-home>
-
-#figure(
-  image("../figures/examples/smart-reverse.png", width: 35%),
-  caption: "智能预约偏好选择",
-) <fig:ui-smart>
-
-*（3）单座位选择。* 除智能推荐外，用户也可进入单座位选择页面，按区域浏览座位矩阵。每个座位卡片显示属性图标（靠窗、有插座、安静区）和实时状态。单座位选择界面如 @fig:ui-seat-select 所示。
-
-#figure(
-  image("../figures/examples/signle-seat-reverse.png", width: 35%),
-  caption: "单座位选择界面",
-) <fig:ui-seat-select>
-
-*（4）预约确认。* 用户点击「一键预约」后，系统根据多维度评分算法推荐最优座位，弹出确认对话框，显示推荐座位信息和60秒倒计时。用户需在犹豫期内确认，否则座位自动释放。预约确认弹窗如 @fig:ui-confirm 所示。
-
-#figure(
-  image("../figures/examples/reverse-confirm.png", width: 35%),
-  caption: "预约确认弹窗",
-) <fig:ui-confirm>
-
-*（5）签到界面。* 预约成功后，用户需在30分钟内到达座位并签到。签到页面显示预约倒计时、座位信息和签到方式选择（扫码签到或自动定位签到）。签到界面如 @fig:ui-checkin 所示。
-
-#figure(
-  image("../figures/examples/checkin.png", width: 35%),
-  caption: "签到界面",
-) <fig:ui-checkin>
-
-*（6）预约历史。* 用户可在「历史记录」中查看过往预约，列表显示座位号、区域、预约日期和状态。预约历史界面如 @fig:ui-history 所示。
-
-#figure(
-  image("../figures/examples/reverse-history.png", width: 35%),
-  caption: "预约历史界面",
-) <fig:ui-history>
-
-*（7）个人中心与信誉分管理。* 「我的」页面展示用户基本信息、信誉分和功能入口。信誉分明细页面记录每次加减分的原因和时间。当用户信誉分低于65分时，系统将在预约时拦截并提示限制原因。个人中心、信誉分明细和信誉分过低拦截提示分别如 @fig:ui-profile 、 @fig:ui-score-detail 和 @fig:ui-low-score 所示。
-
-#figure(
-  image("../figures/examples/profile.png", width: 35%),
-  caption: "个人中心界面",
-) <fig:ui-profile>
-
-#figure(
-  image("../figures/examples/score-detail.png", width: 35%),
-  caption: "信誉分明细界面",
-) <fig:ui-score-detail>
-
-#figure(
-  image("../figures/examples/lower-score.png", width: 35%),
-  caption: "信誉分过低拦截提示",
-) <fig:ui-low-score>
+系统端到端实时数据流如图@fig:sequence-mqtt 所示。硬件端检测到状态变化后，经MQTT上报至后端Broker；后端解析消息、更新数据库，并通过Socket.io向目标座位房间内的所有前端客户端推送状态更新。
 
 === 实时消息处理时序
 

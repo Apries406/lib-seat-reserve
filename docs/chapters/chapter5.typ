@@ -18,6 +18,60 @@
 
 功能测试采用全链路测试方法，从硬件到后端到前端，验证完整数据流。该方法能发现模块间协作问题。
 
+=== 系统操作流程测试
+
+系统操作流程测试验证用户从登录到预约、签到、查询的完整使用流程。测试在真实微信小程序环境中进行，截图均为实际运行界面。
+
+*（1）登录。* 用户首次进入小程序，授权微信登录后系统自动获取openid并完成注册。登录界面如 @fig:ui-login 所示。
+
+#figure(
+  image("../figures/examples/login.png", width: 30%),
+  caption: "小程序登录界面",
+) <fig:ui-login>
+
+*（2）首页与智能预约。* 登录后进入首页，顶部展示当前预约状态，中部为偏好选择区。用户可选择靠窗、有插座、安静区等偏好，开启「接受调剂」后系统自动放宽条件匹配。首页及偏好选择界面如 @fig:ui-home 和 @fig:ui-smart 所示。
+
+#figure(
+  image("../figures/examples/home-reversed.png", width: 30%),
+  caption: "小程序首页",
+) <fig:ui-home>
+
+#figure(
+  image("../figures/examples/smart-reverse.png", width: 30%),
+  caption: "智能预约偏好选择",
+) <fig:ui-smart>
+
+*（3）预约确认。* 点击「一键预约」后，系统推荐最优座位并弹出60秒倒计时确认框。用户需在犹豫期内确认，否则座位自动释放。预约确认弹窗如 @fig:ui-confirm 所示。
+
+#figure(
+  image("../figures/examples/reverse-confirm.png", width: 30%),
+  caption: "预约确认弹窗",
+) <fig:ui-confirm>
+
+*（4）签到。* 预约成功后需在30分钟内到达座位签到。签到页显示倒计时、座位信息和签到方式（扫码或定位）。签到界面如 @fig:ui-checkin 所示。
+
+#figure(
+  image("../figures/examples/checkin.png", width: 30%),
+  caption: "签到界面",
+) <fig:ui-checkin>
+
+*（5）预约历史与个人中心。* 用户可在「历史记录」查看过往预约，在「我的」查看信誉分和功能入口。信誉分低于65分时预约将被拦截。历史记录、个人中心和信誉分拦截分别如 @fig:ui-history 、 @fig:ui-profile 和 @fig:ui-low-score 所示。
+
+#figure(
+  image("../figures/examples/reverse-history.png", width: 30%),
+  caption: "预约历史界面",
+) <fig:ui-history>
+
+#figure(
+  image("../figures/examples/profile.png", width: 30%),
+  caption: "个人中心界面",
+) <fig:ui-profile>
+
+#figure(
+  image("../figures/examples/lower-score.png", width: 30%),
+  caption: "信誉分过低拦截提示",
+) <fig:ui-low-score>
+
 === 用户认证测试
 
 用户认证测试覆盖了微信小程序登录（code换取openid、用户创建与查询）、JWT Token过期行为、设备指纹绑定与校验等场景。
