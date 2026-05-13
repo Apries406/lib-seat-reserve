@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
+import * as QRCode from 'qrcode';
 import { Seat } from '../entities/seat.entity';
 import { SeatStatusLog } from '../entities/seat-status-log.entity';
 import { SeatStatus, StatusTrigger } from '../enums/seat-status.enum';
@@ -180,7 +181,7 @@ export class SeatService {
     return seat;
   }
 
-  private publishDisplay(seat: Seat) {
+  private async publishDisplay(seat: Seat) {
     if (!seat.deviceId) {
       return;
     }
@@ -190,6 +191,20 @@ export class SeatService {
     const expiresIn = seat.reservedUntil
       ? Math.max(0, Math.floor((seat.reservedUntil.getTime() - Date.now()) / 1000))
       : undefined;
+
+    if (qrToken) {
+      try {
+        const asciiQr = await QRCode.toString(qrToken, { type: 'terminal', small: true });
+        console.log(`\n========== 座位 #${seat.seatNumber} 签到二维码 ==========`);
+        console.log(asciiQr);
+        console.log(`Token: ${qrToken}`);
+        console.log(`过期: ${expiresIn ?? 'N/A'} 秒`);
+        console.log('===========================================\n');
+      } catch (err) {
+        console.log(`[QR] seat #${seat.seatNumber} token: ${qrToken}`);
+      }
+    }
+
     this.mqttService.publishDisplay(seat.deviceId, {
       status: seat.status,
       seatNumber: seat.seatNumber,
