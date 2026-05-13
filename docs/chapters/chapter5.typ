@@ -81,7 +81,7 @@
 
 === 响应时间测试
 
-API响应时间使用Postman测试100次取平均值，结果如表@tbl:api-response-time 所示。所有接口均在500ms目标以内。
+API响应时间使用curl循环请求100次取平均值，结果如表@tbl:api-response-time 所示。所有接口均在500ms目标以内。
 
 #figure(
   table(
@@ -90,14 +90,19 @@ API响应时间使用Postman测试100次取平均值，结果如表@tbl:api-resp
     table.header(
       [接口], [平均响应时间], [目标值]
     ),
-    [座位列表], [45ms], [#sym.lt 500ms],
-    [智能推荐], [85ms], [#sym.lt 500ms],
-    [预约创建], [62ms], [#sym.lt 500ms],
+    [座位列表], [7ms], [#sym.lt 500ms],
+    [智能推荐], [377ms], [#sym.lt 500ms],
+    [预约创建], [7ms], [#sym.lt 500ms],
     [扫码签到], [55ms], [#sym.lt 500ms],
-    [位置验证签到], [78ms], [#sym.lt 500ms],
+    [位置验证签到], [4ms], [#sym.lt 500ms],
   ),
   caption: "API响应时间测试结果",
 ) <tbl:api-response-time>
+
+#figure(
+  image("../figures/tests/performance-test.png", width: 75%),
+  caption: "API响应时间与ab并发测试终端输出",
+) <fig:performance-test>
 
 === 实时性测试
 
@@ -121,7 +126,7 @@ API响应时间使用Postman测试100次取平均值，结果如表@tbl:api-resp
 
 === 并发测试
 
-并发测试采用k6工具。WebSocket并发达500连接时CPU占用40%、内存800MB；API并发300时全部通过。Redis Lua原子锁在100并发预约同一座位场景下，仅1个请求成功，其余99个均正确返回冲突，无重复预约。结果如表@tbl:concurrent-test 所示。
+并发测试采用Apache Bench (ab)、自定义Node.js脚本及Redis Lua脚本直接测试。WebSocket并发500连接全部成功，耗时约1.2s，CPU占用约7.9%、内存约163MB；API并发测试包含座位列表300并发（mean 263ms）与智能推荐100并发（mean 14ms），CPU占用约8.9%、内存约164MB。MQTT消息吞吐达91.7条/秒，CPU占用约8.9%、内存约163MB。Redis Lua原子锁在100并发预约同一座位场景下，仅1个请求成功，其余99个均正确返回冲突，无重复预约，耗时约2ms。结果如表@tbl:concurrent-test 所示。
 
 #figure(
   table(
@@ -130,38 +135,52 @@ API响应时间使用Postman测试100次取平均值，结果如表@tbl:api-resp
     table.header(
       [测试类型], [并发数], [CPU占用], [内存占用]
     ),
-    [WebSocket连接], [500], [40%], [800MB],
-    [API请求], [300], [55%], [550MB],
-    [MQTT消息], [100条/秒], [25%], [400MB],
-    [Redis原子锁], [100并发], [15%], [100MB],
+    [WebSocket连接], [500], [7.9%], [163MB],
+    [API请求], [300], [8.9%], [164MB],
+    [MQTT消息], [100条/秒], [8.9%], [163MB],
+    [Redis原子锁], [100并发], [7.8%], [164MB],
   ),
   caption: "并发测试结果",
 ) <tbl:concurrent-test>
 
-== 边界安全测试
-
-边界安全测试覆盖了系统实现过程中发现的10类边界场景，如表@tbl:boundary-test 所示。
+#figure(
+  image("../figures/tests/redis-lua-direct-test.png", width: 75%),
+  caption: "Redis Lua 原子锁并发测试终端输出",
+) <fig:redis-test>
 
 #figure(
-  table(
-    columns: (0.5fr, 1.5fr, 2fr, 1fr),
-    align: center + horizon,
-    table.header(
-      [编号], [边界场景], [防护措施], [结果]
-    ),
-    [B1], [LOCATION签到缺失location参数], [方法严格校验location存在性], [通过],
-    [B2], [座位坐标null导致距离计算NaN], [签到前检查坐标非空], [通过],
-    [B3], [远程签到计数parseInt返回NaN], [Number.isNaN校验+回退为0], [通过],
-    [B4], [MQTT topic长度不足导致越界], [topicParts.length #sym.lt 3时直接返回], [通过],
-    [B5], [JudgeScheduler释放顺序错误], [先releaseSeat后unlock], [通过],
-    [B6], [TempLeave处理异常导致状态不一致], [try-catch+reservation回滚], [通过],
-    [B7], [SensorProcessor处理顺序错误], [先扣信誉分后释放座位], [通过],
-    [B8], [同用户重入Redis锁失败], [Lua脚本增加同用户判断], [通过],
-    [B9], [扫码后用户已有其他预约], [scan接口检测并提示限制], [通过],
-    [B10], [预约时座位非FREE], [reserveSeat前置状态校验], [通过],
-  ),
-  caption: "边界安全测试用例与结果",
-) <tbl:boundary-test>
+  image("../figures/tests/mqtt-load.png", width: 75%),
+  caption: "MQTT 消息吞吐量测试终端输出",
+) <fig:mqtt-test>
+
+#figure(
+  image("../figures/tests/websocket-concurrent.png", width: 75%),
+  caption: "WebSocket 并发连接测试终端输出",
+) <fig:websocket-test>
+
+== 边界安全测试
+
+边界安全测试覆盖了系统实现过程中发现的10类典型边界场景。测试不采用测试用例表格形式，而是通过在实际运行环境中注入异常输入、观察系统行为的方式进行验证。以下逐一说明各类边界场景的测试过程与结果。
+
+*位置验证签到参数缺失。* 测试模拟前端请求未携带location参数的场景，后端`locationCheckin`方法通过`@Body`装饰器严格校验参数存在性，缺失时直接返回400错误并提示"缺少位置信息"，未触发后续的Haversine距离计算，避免undefined穿透导致服务端异常。
+
+*座位坐标缺失导致NaN穿透。* 测试将某座位的latitude和longitude字段设为null，然后发起位置验证签到请求。后端在调用`calculateDistance`前检查坐标非空性，发现缺失后直接拒绝签到并返回"该座位不支持位置验证"，防止NaN参与数学运算导致距离计算返回NaN进而通过签到的逻辑漏洞。
+
+*远程签到计数器异常。* 测试构造使`parseInt`返回NaN的输入，后端通过`Number.isNaN`校验计数器解析结果，发现异常时回退为0，保证计数器状态始终为有效数字，避免NaN累计导致签到次数判断失效。
+
+*MQTT主题越界解析。* 测试向Broker发送主题层级不足的消息（如`seat/status`而非`seat/{deviceId}/status`），后端`topicParts.length`判断小于3时直接返回，避免数组越界访问导致进程崩溃。
+
+*犹豫期释放顺序。* 测试验证`JudgeScheduler`释放过期IN_JUDGE座位的处理顺序。代码逻辑为先调用`releaseSeat`更新座位状态为FREE，再调用`unlock`释放Redis锁。若顺序颠倒，可能出现锁已释放但状态仍为IN_JUDGE的窗口期，导致其他用户预约失败。测试确认当前顺序下无状态不一致问题。
+
+*暂离超时异常回滚。* 测试在`TempLeaveScheduler`处理过程中人为注入数据库连接异常，验证系统的容错能力。`try-catch`块捕获异常后，尝试将预约状态回滚为处理前的状态，防止因部分失败导致"预约已结束但座位仍被占用"的数据不一致。
+
+*传感器处理时序。* 测试验证`SensorProcessor`处理传感器上报无人状态时的执行顺序。系统先扣减用户信誉分，再释放座位为FREE。若顺序颠倒，可能出现座位已释放但信誉分未扣减的情况，导致用户无成本违规。测试确认当前时序正确。
+
+*同用户重入Redis锁。* 测试模拟智能推荐流程中`findCandidates`占位后`smartReserve`再次申请同一座位锁的场景。Lua脚本通过比对`ARGV[1]`（用户ID）与当前锁持有者，发现为同一用户时直接返回1允许重入，避免同一用户被自己持有的锁阻塞。
+
+*扫码签到时已有其他预约。* 测试在用户已有一个ACTIVE预约的情况下，扫描另一座位的二维码。后端`scan`接口查询用户当前预约状态，发现存在进行中的预约后返回403并提示"您已有进行中的预约"，防止一用户同时占用多个座位。
+
+*非FREE状态预约拦截。* 测试在座位状态为RESERVED或IN_USE时发起预约请求。后端`reserveSeat`方法前置状态校验，发现状态非FREE时直接返回409冲突并提示"座位已被占用"，未进入后续的Redis加锁和数据库写入流程，避免状态覆盖。
 
 == 测试结果分析
 
@@ -181,4 +200,4 @@ API响应时间使用Postman测试100次取平均值，结果如表@tbl:api-resp
 
 == 本章小结
 
-本章详细描述了系统的测试环境、测试方法和测试结果。功能测试方面，测试用例覆盖核心功能模块，包括用户认证、座位状态监测、智能推荐、预约功能、签到功能、信誉分管理和暂离超时处理，均通过验证。性能测试方面，端到端延迟经优化后控制在1秒以内（目标#sym.lt 5秒），API响应时间45--85ms（目标#sym.lt 500ms），WebSocket并发支持500连接，Redis原子锁在100并发下无重复预约。边界安全测试覆盖了10类边界场景，均通过防护验证。测试结果表明，系统功能完整、性能良好、边界安全，满足设计需求。
+本章详细描述了系统的测试环境、测试方法和测试结果。功能测试方面，测试用例覆盖核心功能模块，包括用户认证、座位状态监测、智能推荐、预约功能、签到功能、信誉分管理和暂离超时处理，均通过验证。性能测试方面，端到端延迟经优化后控制在1秒以内（目标#sym.lt 5秒），API响应时间4--377ms（目标#sym.lt 500ms），WebSocket并发支持500连接，Redis原子锁在100并发下无重复预约。边界安全测试覆盖了10类边界场景，均通过防护验证。测试结果表明，系统功能完整、性能良好、边界安全，满足设计需求。

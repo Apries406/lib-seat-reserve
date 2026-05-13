@@ -1,14 +1,14 @@
 #import "@preview/cetz:0.3.2"
 
 // ============================================================
-// 图书馆座位智能预约系统
+// 图书馆自习座位智能预约系统
 // 本科毕业设计（论文）Typst 源码
 // 作者: 陈信豪
 // 学号: 202231061133
 // 指导教师: 梁宗文
 // ============================================================
 
-#set document(title: "图书馆座位智能预约系统", author: "陈信豪")
+#set document(title: "图书馆自习座位智能预约系统", author: "陈信豪")
 
 // 页面设置
 #set page(
@@ -58,9 +58,15 @@
     radius: 4pt,
     inset: 8pt,
     width: 100%,
+    breakable: true,
     text(size: 10pt, font: "Consolas")[#it]
   )
 }
+
+// 允许代码清单跨页断开，但图片和表格保持单页
+#show figure: set block(breakable: true)
+#show figure.where(kind: image): set block(breakable: false)
+#show figure.where(kind: table): set block(breakable: false)
 
 // 页眉页脚
 #set page(header: [
@@ -68,7 +74,7 @@
     #text(size: 10.5pt)[
       #context {
         if calc.odd(counter(page).get().first()) {
-          [图书馆座位智能预约系统]
+          [图书馆自习座位智能预约系统]
         } else {
           [西南石油大学本科毕业设计（论文）]
         }
@@ -101,7 +107,7 @@
       columns: (2.5cm, 4.5cm, 2.5cm, 4.5cm),
       row-gutter: 1.2em,
       gutter: 0.5cm,
-      coverlabel("题　　目"), grid.cell(colspan: 3, coverunderline(10cm, text(size: 16pt, weight: "bold")[图书馆座位智能预约系统])),
+      coverlabel("题　　目"), grid.cell(colspan: 3, coverunderline(10cm, text(size: 16pt, weight: "bold")[图书馆自习座位智能预约系统])),
       coverlabel("学生姓名"), coverunderline(4cm, [陈信豪]), coverlabel("学　　号"), coverunderline(4cm, [202231061133]),
       coverlabel("教学院系"), grid.cell(colspan: 3, coverunderline(10cm, [计算机与软件学院])),
       coverlabel("专业年级"), grid.cell(colspan: 3, coverunderline(10cm, [物联网工程2022级])),
@@ -127,9 +133,8 @@
     #image("figures/school_badge.png", width: 25%)
     #v(1.5cm)
     #text(size: 18pt, weight: "bold", font: "Times New Roman")[
-      Design and Implementation of an\
-      Intelligent Library Seat\
-      Reservation System
+      Intelligent Reservation System\
+      for Library Study Seats
     ]
     #v(2cm)
   ]

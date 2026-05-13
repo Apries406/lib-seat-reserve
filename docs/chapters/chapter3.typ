@@ -44,20 +44,20 @@
     import cetz.draw: *
     set-style(stroke: 0.5pt)
     // 边界
-    rect((-4.5, -3.5), (4.5, 3.5), stroke: (dash: "dashed"))
-    content((0, 3.7), [图书馆座位预约系统], anchor: "south", size: 10pt)
+    rect((-3, -3.4), (6, 3.5), stroke: (dash: "dashed"))
+    content((0, 3.7), [图书馆自习座位预约系统], anchor: "south", size: 10pt)
 
     // 参与者 - 学生
     circle((-6.5, 2), radius: 0.4, fill: gray.lighten(80%))
     line((-6.5, 2.4), (-6.5, 2.9))
     line((-6.9, 2.9), (-6.1, 2.9))
-    content((-6.5, 1.5), [学生], size: 9pt)
+    content((-6.5, 1), [学生], size: 9pt)
 
     // 参与者 - 管理员
     circle((-6.5, -2), radius: 0.4, fill: gray.lighten(80%))
     line((-6.5, -1.6), (-6.5, -1.1))
     line((-6.9, -1.1), (-6.1, -1.1))
-    content((-6.5, -2.5), [管理员], size: 9pt)
+    content((-6.5, -3), [管理员], size: 9pt)
 
     // 用例
     let uc(x, y) = circle((x, y), radius: (1.6, 0.5), fill: blue.lighten(90%), stroke: blue)
@@ -182,7 +182,7 @@
 
     // 后端层
     block(0, 0, 9, 1.6, [], fill: green.lighten(92%))
-    content((0, 0.5), text(size: 9pt, weight: "bold")[NestJS应用服务层], anchor: "south")
+    content((0, 0.2), text(size: 9pt, weight: "bold")[NestJS应用服务层], anchor: "south")
     content((0, -0.2), text(size: 7pt)[Controller → Service → Repository → TypeORM], anchor: "north")
 
     // 数据库
@@ -198,7 +198,7 @@
     line((3.5, 2.1), (3.5, 0.8), mark: (end: ">"))
     line((3.5, 0.8), (2.5, 0.8))
     line((0, -0.8), (0, -1.8), mark: (end: ">"))
-    line((2.5, -1.8), (2.6, -1.8))
+    line((3.5, -0.8), (3.5, -1.8), mark: (end: ">"))
   }),
   caption: "系统三层架构图",
 ) <fig:system-architecture>
@@ -258,11 +258,12 @@
     table.header(
       [类别], [器件], [单价], [说明]
     ),
-    table.cell(rowspan: 2, [核心器件]), [ESP32-38Pin-CP2102], [¥25], [主控+WiFi芯片],
+    table.cell(rowspan: 3, [核心器件]), [ESP32-38Pin-CP2102], [¥25], [主控+WiFi芯片],
     [HC-SR501], [¥4.35], [红外传感器],
-    table.cell(colspan: 2, align: right)[器件成本小计], table.cell(colspan: 2)[约¥29.35 / 每座],
+    [SSD1306 OLED], [¥6], [0.96寸状态显示屏],
+    table.cell(colspan: 2, align: right)[器件成本小计], table.cell(colspan: 2)[约¥35.35 / 每座],
     [人工部署], [组装调试], [¥5], [接线、固件烧录、测试],
-    table.cell(colspan: 2, align: right)[预估单座位成本], table.cell(colspan: 2)[约¥34.35],
+    table.cell(colspan: 2, align: right)[预估单座位成本], table.cell(colspan: 2)[约¥40.35],
   ),
   caption: "单座位硬件成本明细",
 ) <tbl:hardware-cost>
@@ -295,8 +296,10 @@
     line((0, 1.2), (-2.5, 0.85), mark: (end: ">"))
     line((0, 1.2), (2.5, 0.85), mark: (end: ">"))
     line((2.5, 0.15), (2.5, 1.5))
-    line((2.5, 1.5), (0, 1.5))
-    line((0, 1.5), (0, 2.4))
+    line((2.5, 1.5), (0.7, 1.5))
+    line((0.7, 1.5), (0.7, 2.5))
+    line((0.7, 2.5), (0, 2.5))
+    line((0, 2.5), (0, 2.4))
     line((-2.5, 0.15), (-2.5, -0.45), mark: (end: ">"))
     line((-2.5, -1.15), (-2.5, -1.75), mark: (end: ">"))
 
@@ -316,6 +319,8 @@ HC-SR501在实际环境中易受空调风、人员经过、电源纹波等干扰
 
 *心跳保活机制。* 硬件节点每30秒发送一次心跳包，支持后端判断设备在线状态、NAT映射保活和前端设备健康展示。
 
+*OLED状态显示屏。* 每个座位配备一块SSD1306 0.96寸OLED显示屏（128×64分辨率，I2C接口），用于实时展示座位状态和签到二维码。显示屏通过I2C总线与ESP32连接（SDA接GPIO21，SCL接GPIO22），仅需两根数据线和两根电源线，接线简洁。当座位状态为空闲时，屏幕显示"FREE"；当被预约或使用中时，屏幕渲染二维码图案，供用户微信扫一扫直接签到。后端通过MQTT向设备推送显示内容，实现状态变化的实时同步。
+
 === 数据传输效率分析
 
 硬件节点与后端之间的数据传输采用JSON格式，单座位状态上报报文约50字节。JSON格式可读性好、调试方便，但存在一定的数据冗余。与自定义二进制协议（约8字节）相比，JSON在开发效率上具有明显优势。原型阶段采用JSON格式，主要考虑调试便利性和后端兼容性；二进制协议可作为后续生产部署的优化方向。
@@ -334,8 +339,8 @@ HC-SR501在实际环境中易受空调风、人员经过、电源纹波等干扰
     set-style(stroke: 0.5pt)
     let layer(y, fill, t, desc) = {
       rect((-4, y - 0.4), (4, y + 0.4), fill: fill, radius: 0.1)
-      content((-1.5, y), text(size: 8pt)[#t], anchor: "east")
-      content((2, y), text(size: 7pt, fill: gray)[#desc], anchor: "west")
+      content((-2, y), text(size: 8pt)[#t], anchor: "east")
+      content((-1, y), text(size: 7pt, fill: gray)[#desc], anchor: "west")
     }
     layer(2, blue.lighten(90%), [Controller层], [业务逻辑编排、参数校验、响应格式化])
     layer(1, green.lighten(90%), [Service层], [SeatService, ReservationService, CheckinService])
@@ -408,105 +413,23 @@ HC-SR501在实际环境中易受空调风、人员经过、电源纹波等干扰
   caption: "数据库E-R图",
 ) <fig:er-diagram>
 
-=== 数据表结构
+=== 逻辑设计
 
-==== Seats 表（座位表）
+根据E-R图，系统将数据抽象为6个实体。各实体的属性及关联关系如下。
 
-Seats表查询最频繁，结构如表@tbl:seats-table 所示。
+*Seat（座位实体）*：描述图书馆内每个座位的基本信息。属性包括座位ID（唯一标识）、所属区域、座位编号、当前状态、绑定硬件设备ID、地理坐标（经度与纬度）、所在楼层、所属楼栋、座位属性（以JSON格式存储靠窗/有插座/安静区等标签）、当前占用用户ID、预约保留截止时间和犹豫期截止时间。Seat与Area为多对一关系，即一个区域包含多个座位；Seat与Reservation为一对多关系，即一个座位可产生多条历史预约记录；Seat与SeatStatusLog为一对多关系，记录该座位历次状态变更历史。
 
-#figure(
-  table(
-    columns: (1.5fr, 1fr, 2.5fr),
-    align: center + horizon,
-    table.header(
-      [字段], [类型], [说明]
-    ),
-    [id], [INT], [座位ID（主键，自增）],
-    [area], [VARCHAR(50)], [所属区域（如A区）],
-    [seatNumber], [VARCHAR(20)], [座位编号（如A-01）],
-    [status], [ENUM], [状态（FREE/RESERVED/IN_USE/MAYBE_LEAVE/TEMP_LEAVE）],
-    [deviceId], [VARCHAR(50)], [绑定硬件设备ID],
-    [latitude], [DECIMAL], [座位纬度（位置验证用）],
-    [longitude], [DECIMAL], [座位经度（位置验证用）],
-    [floor], [VARCHAR(20)], [楼层（如1楼）],
-    [building], [VARCHAR(50)], [楼栋（如图书馆）],
-    [attributes], [JSON], [座位属性（靠窗/有插座/安静区）],
-    [currentUserId], [VARCHAR(50)], [当前占用用户ID],
-    [reservedUntil], [DATETIME], [预约保留截止时间],
-    [judgeExpiresAt], [DATETIME], [犹豫期截止时间],
-  ),
-  caption: "Seats表结构",
-) <tbl:seats-table>
+*Area（区域实体）*：描述图书馆内的区域划分。属性包括区域ID、区域名称、所在楼层和所属楼栋。一个区域包含多个座位。
 
-==== Reservations 表（预约表）
+*User（用户实体）*：描述系统的注册用户。属性包括用户ID（主键）、微信OpenID（唯一标识）、昵称、信誉分、用户角色和创建时间。User与Reservation为一对多关系，即一个用户可发起多条预约记录；User与CreditRecord为一对多关系，记录该用户历次信誉分变更明细。
 
-Reservations表结构如表@tbl:reservations-table 所示。
+*Reservation（预约实体）*：描述用户发起的座位预约记录。属性包括预约ID、用户ID、座位ID、预约状态、签到时间、签退时间、创建时间和更新时间。Reservation通过用户ID和座位ID分别关联User和Seat实体。
 
-#figure(
-  table(
-    columns: (1.5fr, 1fr, 2.5fr),
-    align: center + horizon,
-    table.header(
-      [字段], [类型], [说明]
-    ),
-    [id], [INT], [预约ID（主键，自增）],
-    [userId], [VARCHAR(50)], [用户ID（外键）],
-    [seatId], [INT], [座位ID（外键）],
-    [status], [ENUM], [状态（PENDING/ACTIVE/COMPLETED/CANCELLED）],
-    [checkedInAt], [DATETIME], [签到时间],
-    [checkedOutAt], [DATETIME], [签退时间],
-    [createdAt], [DATETIME], [创建时间],
-    [updatedAt], [DATETIME], [更新时间],
-  ),
-  caption: "Reservations表结构",
-) <tbl:reservations-table>
+*SeatStatusLog（状态日志实体）*：记录座位状态的每次变更，用于审计追溯。属性包括日志ID、座位ID、变更前状态、变更后状态、触发原因、操作用户ID和创建时间。
 
-==== Users 表（用户表）
+*CreditRecord（信誉分记录实体）*：记录用户信誉分的每次变更明细。属性包括记录ID、用户ID、变更类型、变更分值、变更原因和创建时间。
 
-Users表存储用户基本信息与信誉分。
-
-#figure(
-  table(
-    columns: (1.5fr, 1fr, 2.5fr),
-    align: center + horizon,
-    table.header(
-      [字段], [类型], [说明]
-    ),
-    [id], [VARCHAR(50)], [用户ID（主键）],
-    [wxOpenid], [VARCHAR(100)], [微信OpenID（唯一）],
-    [nickname], [VARCHAR(50)], [昵称],
-    [creditScore], [INT], [信誉分（默认100）],
-    [role], [ENUM], [角色（student/admin）],
-    [createdAt], [DATETIME], [创建时间],
-  ),
-  caption: "Users表结构",
-) <tbl:users-table>
-
-==== SeatStatusLog 表（状态日志表）
-
-SeatStatusLog表记录座位状态的每次变更，用于审计和数据分析。
-
-#figure(
-  table(
-    columns: (1.5fr, 1fr, 2.5fr),
-    align: center + horizon,
-    table.header(
-      [字段], [类型], [说明]
-    ),
-    [id], [VARCHAR(50)], [日志ID（UUID）],
-    [seatId], [INT], [座位ID],
-    [previousStatus], [ENUM], [变更前状态],
-    [currentStatus], [ENUM], [变更后状态],
-    [trigger], [ENUM], [触发原因（RESERVE/RELEASE/CHECKIN/TIMEOUT等）],
-    [userId], [VARCHAR(50)], [操作用户ID],
-    [createdAt], [DATETIME], [创建时间],
-  ),
-  caption: "SeatStatusLog表结构",
-) <tbl:seat-status-log-table>
-
-=== 索引优化
-
-索引设计遵循"按需创建"原则。Seats表按`area`、`status`、`floor`建立复合索引，支持区域座位列表的快速查询；Reservations表按`userId`、`status`建立复合索引，优化当前预约查询性能；SeatStatusLog表按`seatId`、`createdAt`建立索引，支持状态变更历史查询。
+逻辑设计遵循第三范式（3NF）。Seat表通过区域字段关联Area实体，避免在座位表中冗余存储区域名称和楼层信息；Reservation表通过外键关联User和Seat实体，避免用户信息和座位信息的冗余存储；各表的ID字段均为独立标识符，不依赖其他属性组合确定，满足第二范式要求；非主属性之间不存在传递依赖，满足第三范式要求。关联关系上，Reservation表包含userId和seatId两个外键字段，分别指向User和Seat；SeatStatusLog表包含seatId外键指向Seat；CreditRecord表包含userId外键指向User。
 
 == API 接口设计
 
