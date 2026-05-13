@@ -6,6 +6,7 @@ dist
 build
 .output
 .swc
+*.
 
 # Taro
 apps/seat-miniapp/dist
@@ -45,4 +46,4 @@ temp
 .cache
 
 graphify-out/
-.oh-my-code/
+.oh-my-code/docs/
