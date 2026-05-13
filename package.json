@@ -8,6 +8,8 @@
     "build:miniapp": "pnpm --filter seat-miniapp build:weapp",
     "dev:api": "pnpm --filter seat-api start:dev",
     "build:api": "pnpm --filter seat-api build",
+    "build:thesis": "cd docs && typst compile main.typ main.pdf --font-path ./fonts",
+    "watch:thesis": "cd docs && typst watch main.typ main.pdf --font-path ./fonts",
     "dev": "pnpm run-p dev:*",
     "build": "pnpm run-s build:*",
     "lint": "pnpm -r lint",
