@@ -1,0 +1,10 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pnpm install && pnpm --filter seat-api build"
+
+[deploy]
+startCommand = "pnpm --filter seat-api start:prod"
+healthcheckPath = "/seats"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
