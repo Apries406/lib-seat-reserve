@@ -1,9 +1,8 @@
 [build]
-builder = "nixpacks"
-buildCommand = "pnpm install && pnpm --filter seat-api build"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "pnpm --filter seat-api start:prod"
+startCommand = "node apps/seat-api/dist/main"
 healthcheckPath = "/seats"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure"
