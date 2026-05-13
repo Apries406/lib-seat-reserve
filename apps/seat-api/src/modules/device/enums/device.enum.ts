@@ -36,3 +36,10 @@ export interface IDeviceCommand {
   payload?: Record<string, any>;
   requestId: string;
 }
+
+export interface IDeviceDisplayPayload {
+  status: string;
+  seatNumber: string;
+  qrToken?: string;
+  expiresIn?: number;
+}
