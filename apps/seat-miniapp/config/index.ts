@@ -28,7 +28,7 @@ export default defineConfig(async (merge, { command, mode }) => {
     outputRoot: 'dist',
     plugins: [],
     defineConstants: {
-      TARO_APP_API_URL: JSON.stringify(process.env.TARO_APP_API_URL || `http://${getLocalIP()}:3000`),
+      TARO_APP_API_URL: JSON.stringify(process.env.TARO_APP_API_URL || 'https://seat-api-production.up.railway.app'),
     },
     copy: {
       patterns: [],
