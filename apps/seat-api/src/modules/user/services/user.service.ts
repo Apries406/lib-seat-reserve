@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreditScoreDetail } from '../entities/credit-score-detail.entity';
 
@@ -133,7 +133,7 @@ export class UserService {
 
   async recoverCreditScore(): Promise<void> {
     const users = await this.userRepo.find({
-      where: [{ creditScore: () => 'creditScore < 100' }],
+      where: { creditScore: LessThan(100) },
     });
 
     for (const user of users) {
