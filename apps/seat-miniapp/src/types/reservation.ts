@@ -19,11 +19,19 @@ export interface IReservation {
   seatId: number;
   seatNumber: string;
   area: string;
+  floor?: string;
+  building?: string;
+  attributes?: {
+    hasOutlet?: boolean;
+    isQuiet?: boolean;
+    nearWindow?: boolean;
+  } | null;
   status: ReservationStatus;
   reservedAt: string;
   expiresAt: string;
   expiresIn?: number;
   checkedInAt?: string;
+  checkedOutAt?: string;
 }
 
 export interface ICreateReservationResponse {

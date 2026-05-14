@@ -3,62 +3,132 @@
 .current {
   min-height: 100vh;
   background: $gray-50;
-  padding: 32px;
+  padding-bottom: 48px;
 
-  &__card {
+  &__header {
     background: linear-gradient(135deg, #7B8AFF 0%, $primary 50%, $primary-dark 100%);
-    border-radius: $radius-lg;
-    padding: 48px;
+    padding: 48px 32px;
     color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 32px;
   }
 
-  &__seat {
+  &__header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  &__seat-number {
     font-size: 72px;
     font-weight: 700;
   }
 
-  &__info {
-    flex: 1;
+  &__badge {
+    padding: 10px 28px;
+    border-radius: $radius-full;
   }
 
-  &__area {
-    font-size: 32px;
-    opacity: 0.9;
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  &__status {
-    font-size: 28px;
-    opacity: 0.75;
-  }
-
-  &__checkin-btn {
-    background: rgba(255, 255, 255, 0.22);
-    border-radius: $radius-md;
-    padding: 16px 32px;
-  }
-
-  &__checkin-text {
-    font-size: 28px;
+  &__badge-text {
+    font-size: 24px;
     font-weight: 600;
+    color: #fff;
   }
 
-  &__checkout-btn {
-    margin-top: 24px;
+  &__location {
+    font-size: 28px;
+    opacity: 0.85;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  &__tags {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__tag {
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: $radius-full;
+    padding: 10px 24px;
+  }
+
+  &__tag-text {
+    font-size: 24px;
+    color: #fff;
+  }
+
+  &__section {
+    margin: 24px 32px;
+    padding: 32px;
     background: #fff;
-    border-radius: $radius-md;
-    padding: 20px 0;
-    text-align: center;
+    border-radius: $radius-lg;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   }
 
-  &__checkout-text {
-    font-size: 30px;
+  &__section-title {
+    font-size: 32px;
     font-weight: 700;
-    color: #FF4D4F;
+    color: $gray-800;
+    margin-bottom: 24px;
+    display: block;
+  }
+
+  &__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid $gray-100;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__label {
+    font-size: 28px;
+    color: $gray-500;
+  }
+
+  &__value {
+    font-size: 28px;
+    color: $gray-800;
+    font-weight: 500;
+
+    &--muted {
+      color: $gray-400;
+    }
+  }
+
+  &__countdown-wrap {
+    margin: 0 32px;
+  }
+
+  &__actions {
+    margin: 32px;
+  }
+
+  &__btn {
+    padding: 28px 0;
+    border-radius: $radius-md;
+    text-align: center;
+
+    &--primary {
+      background: linear-gradient(135deg, $primary 0%, $primary-dark 100%);
+      box-shadow: 0 12px 40px rgba($primary, 0.35);
+    }
+
+    &--danger {
+      background: linear-gradient(135deg, #FF6B81 0%, #FF4D4F 100%);
+      box-shadow: 0 12px 40px rgba(255, 77, 79, 0.3);
+    }
+  }
+
+  &__btn-text {
+    font-size: 32px;
+    font-weight: 600;
+    color: #fff;
   }
 
   &__empty {

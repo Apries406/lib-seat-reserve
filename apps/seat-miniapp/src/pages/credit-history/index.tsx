@@ -10,6 +10,7 @@ const REASON_LABELS: Record<string, string> = {
   CHECKIN_NO_PERSON: '签到后人未到场',
   LONG_LEAVE: '暂离超时',
   REMOTE_CHECKIN: '异常远程签到',
+  DAILY_RECOVER: '每日信誉分恢复',
 };
 
 export default function CreditHistory() {

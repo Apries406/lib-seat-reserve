@@ -159,7 +159,7 @@ export default function Index() {
         <View className="index__status-card" onClick={() => navigateTo({ url: '/pages/current/index' })}>
           <View className="index__status-header">
             <Text className="index__status-label">当前预约</Text>
-            <Text className="index__status-badge">
+            <Text className={`index__status-badge ${currentReservation.status === 'PENDING' ? 'index__status-badge--pending' : 'index__status-badge--active'}`}>
               {currentReservation.status === 'ACTIVE' ? '使用中' : '待签到'}
             </Text>
           </View>

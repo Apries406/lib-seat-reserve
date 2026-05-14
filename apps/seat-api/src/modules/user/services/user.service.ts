@@ -132,14 +132,28 @@ export class UserService {
   }
 
   async recoverCreditScore(): Promise<void> {
-    await this.userRepo
-      .createQueryBuilder()
-      .update(User)
-      .set({
-        creditScore: () => 'LEAST(creditScore + 5, 100)',
-      })
-      .where('creditScore < :max', { max: 100 })
-      .execute();
+    const users = await this.userRepo.find({
+      where: [{ creditScore: () => 'creditScore < 100' }],
+    });
+
+    for (const user of users) {
+      const beforeScore = user.creditScore;
+      const afterScore = Math.min(beforeScore + 5, 100);
+      if (afterScore === beforeScore) continue;
+
+      user.creditScore = afterScore;
+      await this.userRepo.save(user);
+
+      const detail = this.creditScoreDetailRepo.create({
+        userId: user.id,
+        changeAmount: 5,
+        reason: 'DAILY_RECOVER',
+        beforeScore,
+        afterScore,
+        reservationId: null,
+      });
+      await this.creditScoreDetailRepo.save(detail);
+    }
   }
 
   async updateProfile(id: string, nickname?: string, avatar?: string): Promise<User> {
