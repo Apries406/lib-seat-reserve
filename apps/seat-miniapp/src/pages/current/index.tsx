@@ -4,7 +4,7 @@ import { useReservation } from '../../hooks/useReservation';
 import './index.scss';
 
 export default function Current() {
-  const { currentReservation, fetchCurrent } = useReservation();
+  const { currentReservation, fetchCurrent, checkout } = useReservation();
 
   useDidShow(() => {
     void fetchCurrent();
@@ -27,6 +27,14 @@ export default function Current() {
               onClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
             >
               <Text className="current__checkin-text">去签到</Text>
+            </View>
+          )}
+          {currentReservation.status === 'ACTIVE' && (
+            <View
+              className="current__checkout-btn"
+              onClick={() => checkout(currentReservation.id)}
+            >
+              <Text className="current__checkout-text">退座</Text>
             </View>
           )}
         </View>

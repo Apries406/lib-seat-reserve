@@ -114,6 +114,25 @@ export class ReservationService {
     return reservation;
   }
 
+  async checkout(id: string, userId: string): Promise<Reservation> {
+    const reservation = await this.findById(id);
+
+    if (reservation.userId !== userId) {
+      throw new BadRequestException('无权操作此预约');
+    }
+
+    if (reservation.status !== ReservationStatus.ACTIVE) {
+      throw new BadRequestException('预约状态不允许释放');
+    }
+
+    reservation.status = ReservationStatus.COMPLETED;
+    reservation.checkedOutAt = new Date();
+    await this.reservationRepo.save(reservation);
+    await this.seatService.releaseSeat(reservation.seatId, StatusTrigger.RELEASE);
+
+    return reservation;
+  }
+
   async getCurrent(userId: string): Promise<any> {
     const reservation = await this.reservationRepo.findOne({
       where: {

@@ -45,6 +45,17 @@ export class ReservationController {
     };
   }
 
+  @Post(':id/checkout')
+  @ApiOperation({ summary: '主动释放座位（退座）' })
+  async checkout(@Request() req, @Param('id') id: string) {
+    const reservation = await this.reservationService.checkout(id, req.user.userId);
+    return {
+      code: 0,
+      message: '退座成功',
+      data: this.reservationService.toResponse(reservation),
+    };
+  }
+
   @Get('history')
   @ApiOperation({ summary: '预约历史' })
   async getHistory(@Request() req, @Query('page') page: number = 1, @Query('limit') limit: number = 10) {

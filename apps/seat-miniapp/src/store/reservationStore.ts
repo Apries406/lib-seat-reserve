@@ -14,6 +14,7 @@ interface ReservationStore {
   fetchCurrent: () => Promise<void>;
   createReservation: (seatId: number) => Promise<IReservation>;
   cancelReservation: (id: string) => Promise<void>;
+  checkoutReservation: (id: string) => Promise<void>;
   fetchHistory: (refresh?: boolean) => Promise<void>;
   setCountdown: (seconds: number) => void;
   tickCountdown: () => void;
@@ -83,6 +84,17 @@ export const useReservationStore = create<ReservationStore>((set, get) => ({
     await api.cancelReservation(id);
     set({ currentReservation: null, countdown: 0 });
     stopCountdownTimer();
+  },
+
+  checkoutReservation: async (id: string) => {
+    set({ isLoading: true });
+    try {
+      await api.checkoutReservation(id);
+      set({ currentReservation: null, countdown: 0 });
+      stopCountdownTimer();
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   fetchHistory: async (refresh = false) => {

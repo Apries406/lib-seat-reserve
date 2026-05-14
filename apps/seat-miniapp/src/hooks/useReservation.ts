@@ -12,6 +12,7 @@ export function useReservation() {
     fetchCurrent,
     createReservation,
     cancelReservation,
+    checkoutReservation,
     fetchHistory,
   } = useReservationStore();
 
@@ -39,6 +40,17 @@ export function useReservation() {
     }
   }, [cancelReservation]);
 
+  const handleCheckout = useCallback(async (id: string) => {
+    const { confirm } = await Taro.showModal({
+      title: '确认退座',
+      content: '退座后将释放座位，确定继续吗？',
+    });
+    if (confirm) {
+      await checkoutReservation(id);
+      Taro.showToast({ title: '退座成功', icon: 'success' });
+    }
+  }, [checkoutReservation]);
+
   const loadMore = useCallback(() => {
     if (!isLoading && hasMore) {
       fetchHistory();
@@ -64,6 +76,7 @@ export function useReservation() {
     hasMore,
     reserve: handleReserve,
     cancel: handleCancel,
+    checkout: handleCheckout,
     loadMore,
     refreshHistory,
     fetchCurrent,
