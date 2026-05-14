@@ -14,19 +14,19 @@ export class CreditRecoveryScheduler implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const now = new Date();
 
-    // If it's early morning (00:00-03:00), run immediately in case we missed midnight
-    if (now.getHours() < 3) {
-      this.logger.log('Server started in early morning, running credit recovery catch-up');
+    // Demo/测试：启动后 10 秒先执行一次，方便立即验证每日恢复功能
+    this.initTimer = setTimeout(() => {
+      this.initTimer = null;
+      this.logger.log('Running initial credit recovery for demo');
       void this.runRecovery();
-    }
+    }, 10_000);
 
     const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
     const delay = nextMidnight.getTime() - now.getTime();
 
-    this.logger.log(`Credit recovery scheduled in ${Math.round(delay / 1000 / 60)} minutes`);
+    this.logger.log(`Daily credit recovery scheduled in ${Math.round(delay / 1000 / 60)} minutes`);
 
-    this.initTimer = setTimeout(() => {
-      this.initTimer = null;
+    this.timer = setTimeout(() => {
       void this.runRecovery();
       this.timer = setInterval(() => {
         void this.runRecovery();
