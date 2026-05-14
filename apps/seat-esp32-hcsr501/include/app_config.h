@@ -7,8 +7,8 @@
 namespace AppConfig {
 
 // ========== 1. WiFi 配置 ==========
-constexpr char WIFI_SSID[] = "YOUR_WIFI_SSID";
-constexpr char WIFI_PASSWORD[] = "YOUR_WIFI_PASSWORD";
+constexpr char WIFI_SSID[] = "apries";
+constexpr char WIFI_PASSWORD[] = "Cxhzs067311.";
 
 // ========== 2. 设备标识 ==========
 // 必须与数据库 seats 表里的 deviceId 一致，例如 DEV-0001 ~ DEV-0500
@@ -18,8 +18,8 @@ constexpr char DEVICE_ID[] = "DEV-0001";
 // HiveMQ Cloud 免费版强制 TLS，端口 8883
 constexpr char MQTT_HOST[] = "e1ee63562b6a49748af5646f23367179.s1.eu.hivemq.cloud";
 constexpr uint16_t MQTT_PORT = 8883;
-constexpr char MQTT_USERNAME[] = "";
-constexpr char MQTT_PASSWORD[] = "";
+constexpr char MQTT_USERNAME[] = "apries";
+constexpr char MQTT_PASSWORD[] = "Cxhzs067311.";
 
 // HC-SR501 输出为数字信号；如接线不同，可直接改此 GPIO。
 constexpr uint8_t PIR_PIN = 27;
