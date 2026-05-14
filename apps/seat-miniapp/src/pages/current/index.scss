@@ -47,6 +47,20 @@
     font-weight: 600;
   }
 
+  &__checkout-btn {
+    margin-top: 24px;
+    background: #fff;
+    border-radius: $radius-md;
+    padding: 20px 0;
+    text-align: center;
+  }
+
+  &__checkout-text {
+    font-size: 30px;
+    font-weight: 700;
+    color: #FF4D4F;
+  }
+
   &__empty {
     height: 60vh;
     display: flex;

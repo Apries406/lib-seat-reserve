@@ -60,6 +60,11 @@
     border-radius: $radius-md;
     font-size: 26px;
     font-weight: 600;
+
+    &--danger {
+      background: #fff;
+      color: #FF4D4F;
+    }
   }
 
   &__area-tabs {

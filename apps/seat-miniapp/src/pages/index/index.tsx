@@ -12,7 +12,7 @@ const FLOOR_OPTIONS = [
 ];
 
 export default function Index() {
-  const { currentReservation, fetchCurrent } = useReservation();
+  const { currentReservation, fetchCurrent, checkout } = useReservation();
 
   const [preferences, setPreferences] = useState({
     nearWindow: false,
@@ -156,7 +156,7 @@ export default function Index() {
   return (
     <View className="index">
       {currentReservation && (
-        <View className="index__status-card">
+        <View className="index__status-card" onClick={() => navigateTo({ url: '/pages/current/index' })}>
           <View className="index__status-header">
             <Text className="index__status-label">当前预约</Text>
             <Text className="index__status-badge">
@@ -171,12 +171,17 @@ export default function Index() {
             {currentReservation.status === 'PENDING' ? (
               <View
                 className="index__status-action"
-                onClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
+                catchClick={() => navigateTo({ url: `/pages/checkin/index?id=${currentReservation.id}` })}
               >
                 去签到
               </View>
             ) : (
-              <View className="index__status-action index__status-action--active">进行中</View>
+              <View
+                className="index__status-action index__status-action--danger"
+                catchClick={() => checkout(currentReservation.id)}
+              >
+                退座
+              </View>
             )}
           </View>
         </View>
