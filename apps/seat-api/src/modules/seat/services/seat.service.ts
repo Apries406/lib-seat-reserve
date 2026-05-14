@@ -195,11 +195,21 @@ export class SeatService {
     if (qrToken) {
       try {
         const asciiQr = await QRCode.toString(qrToken, { type: 'terminal', small: true });
-        console.log(`\n========== 座位 #${seat.seatNumber} 签到二维码 ==========`);
+        const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrToken)}`;
+        const expireText = seat.reservedUntil
+          ? `${seat.reservedUntil.toLocaleString('zh-CN')} (${expiresIn}秒)`
+          : 'N/A';
+
+        console.log(`\n┌─────────────────────────────────────────────┐`);
+        console.log(`│  座位 #${seat.seatNumber} 签到二维码`);
+        console.log(`├─────────────────────────────────────────────┤`);
+        console.log(`│  区域: ${seat.area ?? 'N/A'}`);
+        console.log(`│  状态: ${seat.status}`);
+        console.log(`│  Token: ${qrToken}`);
+        console.log(`│  过期时间: ${expireText}`);
+        console.log(`│  图片链接: ${qrImageUrl}`);
+        console.log(`└─────────────────────────────────────────────┘`);
         console.log(asciiQr);
-        console.log(`Token: ${qrToken}`);
-        console.log(`过期: ${expiresIn ?? 'N/A'} 秒`);
-        console.log('===========================================\n');
       } catch (err) {
         console.log(`[QR] seat #${seat.seatNumber} token: ${qrToken}`);
       }

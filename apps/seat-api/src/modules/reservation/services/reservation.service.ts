@@ -186,6 +186,10 @@ export class ReservationService {
   }
 
   toResponse(reservation: Reservation) {
+    const expiresIn = Math.max(
+      0,
+      Math.floor((reservation.expiresAt.getTime() - Date.now()) / 1000),
+    );
     return {
       id: reservation.id,
       seatId: reservation.seatId,
@@ -194,6 +198,7 @@ export class ReservationService {
       status: reservation.status,
       reservedAt: reservation.reservedAt,
       expiresAt: reservation.expiresAt,
+      expiresIn,
       checkedInAt: reservation.checkedInAt,
       checkedOutAt: reservation.checkedOutAt,
     };

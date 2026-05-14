@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import { useReservationStore } from '../store/reservationStore';
 
@@ -13,23 +13,7 @@ export function useReservation() {
     createReservation,
     cancelReservation,
     fetchHistory,
-    tickCountdown,
   } = useReservationStore();
-
-  const timerRef = useRef<NodeJS.Timer | null>(null);
-
-  useEffect(() => {
-    if (countdown > 0) {
-      timerRef.current = setInterval(() => {
-        tickCountdown();
-      }, 1000);
-    }
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [countdown > 0, tickCountdown]);
 
   const handleReserve = useCallback(async (seatId: number) => {
     try {

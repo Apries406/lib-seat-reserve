@@ -22,6 +22,7 @@ export interface IReservation {
   status: ReservationStatus;
   reservedAt: string;
   expiresAt: string;
+  expiresIn?: number;
   checkedInAt?: string;
 }
 

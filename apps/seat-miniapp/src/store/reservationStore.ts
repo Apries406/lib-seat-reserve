@@ -20,6 +20,30 @@ interface ReservationStore {
   clearCurrent: () => void;
 }
 
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+const startCountdownTimer = (get: () => ReservationStore, set: any) => {
+  if (countdownTimer) return;
+  countdownTimer = setInterval(() => {
+    const { countdown } = get();
+    if (countdown > 0) {
+      set({ countdown: countdown - 1 });
+    } else {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+    }
+  }, 1000);
+};
+
+const stopCountdownTimer = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+};
+
 export const useReservationStore = create<ReservationStore>((set, get) => ({
   currentReservation: null,
   history: [],
@@ -30,12 +54,12 @@ export const useReservationStore = create<ReservationStore>((set, get) => ({
 
   fetchCurrent: async () => {
     const reservation = await api.getCurrentReservation();
-    set({
-      currentReservation: reservation,
-      countdown: reservation
-        ? Math.max(0, Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000))
-        : 0,
-    });
+    const countdown = reservation
+      ? (reservation.expiresIn ?? Math.max(0, Math.floor((new Date(reservation.expiresAt).getTime() - Date.now()) / 1000)))
+      : 0;
+    set({ currentReservation: reservation, countdown });
+    if (countdown > 0) startCountdownTimer(get, set);
+    else stopCountdownTimer();
   },
 
   createReservation: async (seatId: number) => {
@@ -46,10 +70,9 @@ export const useReservationStore = create<ReservationStore>((set, get) => ({
         ...result,
         reservedAt: new Date().toISOString(),
       };
-      set({
-        currentReservation: reservation,
-        countdown: Math.floor((new Date(result.expiresAt).getTime() - Date.now()) / 1000),
-      });
+      const countdown = result.expiresIn ?? Math.max(0, Math.floor((new Date(result.expiresAt).getTime() - Date.now()) / 1000));
+      set({ currentReservation: reservation, countdown });
+      startCountdownTimer(get, set);
       return reservation;
     } finally {
       set({ isLoading: false });
@@ -59,6 +82,7 @@ export const useReservationStore = create<ReservationStore>((set, get) => ({
   cancelReservation: async (id: string) => {
     await api.cancelReservation(id);
     set({ currentReservation: null, countdown: 0 });
+    stopCountdownTimer();
   },
 
   fetchHistory: async (refresh = false) => {
@@ -76,14 +100,23 @@ export const useReservationStore = create<ReservationStore>((set, get) => ({
     }
   },
 
-  setCountdown: (seconds) => set({ countdown: seconds }),
+  setCountdown: (seconds) => {
+    set({ countdown: seconds });
+    if (seconds > 0) startCountdownTimer(get, set);
+    else stopCountdownTimer();
+  },
 
   tickCountdown: () => {
     const { countdown } = get();
     if (countdown > 0) {
       set({ countdown: countdown - 1 });
+    } else {
+      stopCountdownTimer();
     }
   },
 
-  clearCurrent: () => set({ currentReservation: null, countdown: 0 }),
+  clearCurrent: () => {
+    set({ currentReservation: null, countdown: 0 });
+    stopCountdownTimer();
+  },
 }));
